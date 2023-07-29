@@ -1,0 +1,4412 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ここは「チンポ」「ケツマンコ」見られて、見せて、さわられ嬲られ 輪姦され。 犯かされ。チンポしごかれ、ケツ犯かされ 精液絞り取られたい男の場所">
+
+<title>RESCURE</title>
+
+
+<script>
+var emoji = {
+	poi:{chara:"❔",size:10,multi:0.5},
+	victim:{chara:"🤕",size:10,multi:0.5},
+	healed:{chara:"🥰",size:10,multi:0.5},
+	hazmat:{chara:"💣",size:10,multi:0.5},
+	smoke:{chara:"💭",size:10,multi:0.8},
+	fire:{chara:"🔥",size:10,multi:0.8},
+	hotspot:{chara:"💥",size:10,multi:0.3},
+	fireengine:{chara:"🚒",size:10,multi:0.7},
+	ambulance:{chara:"🚑",size:10,multi:0.7},
+	p1:{chara:"①",size:10,multi:0.6},
+	p2:{chara:"②",size:10,multi:0.6},
+	p3:{chara:"③",size:10,multi:0.6},
+	p4:{chara:"④",size:10,multi:0.6},
+	p5:{chara:"⑤",size:10,multi:0.6},
+	p6:{chara:"⑥",size:10,multi:0.6},
+	damage:{chara:"🏚",size:10,multi:0},
+	dead:{chara:"☠",size:10,multi:0},
+	alive:{chara:"💖",size:10,multi:0},
+	ap:{chara:"🏃",size:10,multi:0},
+	sap:{chara:"💨",size:10,multi:0},
+	rewind:{chara:"🔄",size:10,multi:0},
+};
+
+var role = {
+
+	generalist:{
+		ap:5,
+		sap:0,
+		name:"一般隊員",
+		ex_action:[],
+		dis_ex:false
+	},
+	captain:{
+		ap:4,
+		sap:2,
+		name:"消防指令",
+		ex_action:[
+			{name:"他者の移動",cost:1,
+			select:["n","s","s","g"],
+			cost:function(a,b){return 1;},
+			action:[
+				function(){
+					clear_message();
+					var sss =[];
+					for(var i=0;i<player.length;i++){
+						if(i!=game.turn){
+							sss.push("プレイヤー"+(i+1));
+						}
+					}
+					sss.push("キャンセル")
+					add_message("どのプレイヤーを動かしますか？");
+					show_option(sss);
+					ex_select++;
+				},
+				function(a){
+					clear_message();
+					if(a>=game.turn)a++;
+					if(a==player.length){choose_action();return false;}
+					player[game.turn].ex_act.target = a;
+
+					if(player[a].role=="cafs"){
+						if(player[game.turn].ex_act.cafs){
+							add_message("この能力を"+role["cafs"].name+"に使えるのは1回までだ。");
+							choose_action();
+							return true;
+						}
+					}
+					add_message("何をさせますか？");
+					show_option(["移動/運搬","扉の開閉","キャンセル"]);
+					ex_select++;
+				},
+				function(a){
+					clear_message();
+					if(a==2){choose_action();return false;}
+					player[game.turn].ex_act.movedoor = a;
+					add_message("どこを対象にしますか？");
+					show_option(["キャンセル"]);
+					ex_select++;
+				},
+				function(xx,yy){
+					var tt= player[game.turn].ex_act.target;
+					var md = player[game.turn].ex_act.movedoor;
+					if(yy<0){choose_action();return false;}
+
+					if(md==0){
+						ss = player_move(tt,xx,yy);//APの判定もやってくれてる。
+						if(ss){player[game.turn].ex_act[player[tt].role] = true;}
+					}else{
+						if(is_payable(8,0)==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+						ss = opendoor(player[tt].x,player[tt].y,xx,yy);
+						if(ss){
+							player[game.turn].ex_act[player[tt].role] = true;
+							pay_cost(8,0);
+						}
+						choose_action();
+					}
+					return true;
+				}
+			]
+			}
+		],
+		dis_ex:false
+	},
+	imaging:{
+		ap:4,
+		sap:0,
+		name:"赤外線走査員",
+		ex_action:[
+			{name:"不審箇所の識別",
+			select:["n","g"],
+			cost:function(a,b){return 1;},
+			action:[
+				function(){
+					clear_message();
+					if(is_payable(8,0)==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+					var sss =[];
+					for(var i=0;i<poi.length;i++){
+						if(poi[i].status==1){
+							sss.push("地点["+poi[i].x+","+poi[i].y+"]");
+						}
+					}
+					if(sss.length==0){
+						add_message("識別できていない不審箇所がない！");
+					}if(sss.length==1){
+						ex_select++;
+						ex_action(0);
+					}else{
+						add_message("どの不審箇所を識別しますか？");
+						ex_select++;
+						show_option(sss);
+					}
+				},
+				function(xx,yy){
+
+					var tt = xx;
+
+					for(var i = 0;i < poi.length;i++){
+						if(poi[i].status==1){
+							tt--;
+							if(tt < 0 && yy < 0){
+								xx = i;
+								yy = -1;
+								break;
+							}
+							if(poi[i].x == xx && poi[i].y == yy){
+								xx = i;
+								yy = -1;
+								break;
+							}
+						}
+					}
+
+					if(yy < 0){
+						clear_message();
+						pay_cost(8,0);
+						flip_poi(xx);
+						choose_action();
+						return true;
+					}
+				}
+			]
+			}
+		],
+		dis_ex:false
+	},
+	cafs:{
+		ap:3,
+		sap:3,
+		name:"CAFS装置隊員",
+		ex_action:[
+		],
+		dis_ex:false
+	},
+	paramedic:{
+		ap:4,
+		sap:0,
+		name:"救急救命士",
+		ex_action:[
+			{name:"要救助者の蘇生",
+			cost:function(a,b){return 1;},
+			select:["n"],
+			action:[
+				function(){
+					clear_message();
+					if(is_payable(8,0)==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+
+					for(var i=0;i<poi.length;i++){
+						if(poi[i].status==2 && player[game.turn].x ==poi[i].x && player[game.turn].y ==poi[i].y){
+							poi[i].status=3;
+							add_message("要救助者を手当てした。");
+							choose_action();
+							return true;
+						}
+					}
+					pay_cost(8,0);
+					add_message("手当てをしなければならない要救助者がその場にいない。");
+					choose_action();
+					return true;
+				}
+			]
+			}
+		],
+		dis_ex:true
+	},
+	hazmat:{
+		ap:4,
+		sap:0,
+		name:"危険物処理隊員",
+		ex_action:[
+			{name:"危険物の処理",
+			cost:function(a,b){return 1;},
+			select:["n"],
+			action:[
+				function(){
+					clear_message();
+					for(var i=0;i<hazmat.length;i++){
+						if(hazmat[i].status==1 && player[game.turn].x ==hazmat[i].x && player[game.turn].y ==hazmat[i].y){
+							hazmat[i].status=0;
+							add_message("危険物を処理した。");
+							choose_action();
+							return true;
+						}
+					}
+					add_message("危険物がその場にいない。");
+					choose_action();
+					return true;
+				}
+			]
+			}
+		],
+		dis_ex:false
+	},
+	rescue:{
+		ap:4,
+		sap:3,
+		name:"特別救助隊員",
+		ex_action:[
+		],
+		dis_ex:true
+	},
+	driver:{
+		ap:4,
+		sap:0,
+		name:"運転操作技師",
+		ex_action:[
+		],
+		dis_ex:false
+	},
+};
+
+var map = {
+	first_easy:{
+		tate:8,
+		yoko:10,
+		poi_end:{x:3,y:3},
+		name:"基本セット(表)",
+		fireengine_place:[	[[7,0],[8,0]],
+				[[9,5],[9,6]],
+				[[2,7],[1,7]],
+				[[0,2],[0,1]]],
+		ambulance_place:[[[5,0],[6,0]],
+				[[9,4],[9,3]],
+				[[3,7],[4,7]],
+				[[0,3],[0,4]]],
+		wall_yoko:
+			[[0,0,0,0,0,0,0,0,0,0],
+			 [4,0,0,2,0,4,0,0,4,0],
+			 [4,0,0,4,0,2,0,0,4,0],
+			 [1,0,2,0,0,0,4,0,4,0],
+			 [4,0,4,0,0,0,2,0,1,0],
+			 [4,0,0,0,0,4,0,4,4,0],
+			 [4,0,0,0,0,2,0,2,4,0],
+			 [0,0,0,0,0,0,0,0,0,0]],
+		wall_tate:
+			[[0,4,4,4,4,4,1,4,4,0],
+			 [0,0,0,0,0,0,0,0,0,0],
+			 [0,0,0,4,4,4,4,4,2,0],
+			 [0,0,0,0,0,0,0,0,0,0],
+			 [0,4,4,4,2,4,4,4,4,0],
+			 [0,0,0,0,0,0,0,0,0,0],
+			 [0,4,4,1,4,4,4,4,4,0],
+			 [0,0,0,0,0,0,0,0,0,0]],
+		poi_move:
+			[[0,0,0,0,0,0,0,0,0,0],
+			 [0,3,2,2,2,2,2,2,1,0],
+			 [0,6,3,4,2,2,6,1,4,0],
+			 [0,6,8,2,4,4,4,8,4,0],
+			 [0,6,2,6,6,6,8,2,4,0],
+			 [0,6,9,4,8,8,6,7,4,0],
+			 [0,9,8,8,8,8,8,8,7,0],
+			 [0,0,0,0,0,0,0,0,0,0]]
+	},
+	first_normal:{
+		tate:8,
+		yoko:10,
+		poi_end:{x:3,y:3},
+		name:"基本セット(裏)",
+		fireengine_place:[	[[3,0],[4,0]],
+				[[9,2],[9,3]],
+				[[5,7],[6,7]],
+				[[0,4],[0,5]]],
+		ambulance_place:[[[5,0],[6,0]],
+				[[9,4],[9,5]],
+				[[3,7],[4,7]],
+				[[0,2],[0,3]]],
+		wall_yoko:
+			[[0,0,0,0,0,0,0,0,0,0],
+			 [4,0,0,4,0,2,0,0,4,0],
+			 [4,0,0,4,0,4,0,0,4,0],
+			 [1,0,0,4,0,2,0,0,4,0],
+			 [4,0,0,0,0,0,2,0,4,0],
+			 [4,0,0,4,0,0,4,0,4,0],
+			 [4,0,0,4,0,0,4,0,4,0],
+			 [0,0,0,0,0,0,0,0,0,0]],
+		wall_tate:
+			[[0,4,4,4,4,4,4,4,4,0],
+			 [0,0,0,0,4,4,0,0,0,0],
+			 [0,4,4,0,0,0,0,0,0,0],
+			 [0,0,0,0,4,2,2,4,4,0],
+			 [0,4,4,2,4,4,2,0,0,0],
+			 [0,0,0,0,0,0,0,0,0,0],
+			 [0,4,4,4,4,4,4,4,4,0],
+			 [0,0,0,0,0,0,0,0,0,0]],
+		poi_move:
+			[[0,0,0,0,0,0,0,0,0,0],
+			 [0,3,2,2,2,2,2,2,1,0],
+			 [0,6,3,4,2,2,6,1,4,0],
+			 [0,6,8,2,4,4,4,8,4,0],
+			 [0,6,2,6,6,6,8,2,4,0],
+			 [0,6,9,4,8,8,6,7,4,0],
+			 [0,9,8,8,8,8,8,8,7,0],
+			 [0,0,0,0,0,0,0,0,0,0]]
+	}
+}
+
+var p_color = ["RGB(255,106,106)","RGB(106,106,255)","RGB(106,255,106)","RGB(255,255,106)","RGB(244,180,106)","RGB(228,228,228)"];
+var hazmat_color = "RGB(218,38,38)";
+var poi_color = "RGB(75,181,231)";
+var ambulance_color = "RGB(255,200,32)";
+var fireengine_color = "RGB(0,162,132)";
+var poi_name = ["救助済み","不審箇所","要救助者","要救助者(手当済み)"];
+var difficulty_name = ["新入隊員レベル","ベテランレベル","英雄レベル"];
+
+
+var board = {
+
+	tate:8,yoko:10,
+
+	wall_yoko:[],//縦横のマス数、壁の状態(0=なし、1=扉(開)、2=扉(閉)、3=壁（ダメージ)、4=壁(無傷)
+	wall_tate:[],//マスから見て右と下の壁の状態を管理する。（縦の真下と横の真右のマスは必ず0にする)
+
+	hotspot:[],//高音点マーカー
+	fire:[],//煙1／火2マーカー
+	marker:[],
+	poi_end:{},
+	fireengine_pos:0,
+	ambulance_pos:0,
+	fireengine_place:[],
+	ambulance_place:[],
+}
+
+var game = {
+	version:0.9,//ロードデータの互換性がなくなったらメジャーバージョンを上げる。そうでなければ小数点以下を上げる。
+
+	phase: 0,//シーンでの進行度合い、ゲームブックのパラグラフ番号の感覚
+	scene: 0,//メニュー、チュートリアル、セットアップ、ゲーム中、煙の設置、勝敗判定&POIの設置
+	turn : 0,//誰のターンか
+
+	damage :24,
+	alive:0,
+	dead:0,
+
+	hotspot_remain:6,
+
+	hotspot_flag:false, //炎の拡大で高温点の所に当たったかどうか
+
+	poi_rest:15,
+	victim_rest:10,
+	false_rest:5,
+
+	difficulty:0,
+
+	ap:0,
+	sap:0,
+}
+
+
+
+var canvas;
+var context;
+
+
+var mouse_x = 0;
+var mouse_y = 0;
+var mouse_cell_x = 0;
+var mouse_cell_y = 0;
+
+var click_x = 0;
+var click_y = 0;
+var click_cell_x = 0;
+var click_cell_y = 0;
+
+var cell_size = 0;
+
+var dice8 = 1;
+var dice6 = 1;
+
+var hazmat =[];
+var poi = [];
+var player = [];
+
+var card_font_size = 5;
+var card_pos = 0;//オプションが右か下かどこにあるか
+var card_labels = [];
+var card_td = [];
+
+var role_selector = [];
+
+var reentry_pos = [];
+
+var boarding_member = [];
+var vehicle_driven =0;
+var vehicle_destination = 0;
+
+
+var nbr_player = 3;
+
+var ex_act_count = 0;
+var ex_select = 0;
+
+var rewindable = true;//巻き戻しフラグ
+
+var rerolled6 = false;
+var rerolled8 = false;
+
+var board_json;
+var game_json;
+var poi_json;
+var hazmat_json;
+var player_json;
+
+
+var message_array = [];//メッセージ記録用変数
+
+
+//---イニシャル-------------------------------
+
+function init(){
+	context = game_display.getContext('2d');
+	init_map("first_easy");
+	show_option(["tin","man"]);
+	resize_board();
+	window.onresize = resize_board;
+	game_display.onclick = click_board;
+	game_display.onmousemove = mousemove_board;
+	
+	game.scene = 0;
+	game.phase = 0;	
+	enter_start_menu();
+}
+
+//---イベントハンドラ------------------------
+
+function click_board(e){
+	rect = game_display.getBoundingClientRect();
+	click_x = e.clientX - rect.left;
+	click_y = e.clientY - rect.top;
+
+	click_cell_x = Math.floor(click_x / cell_size);
+	click_cell_y = Math.floor(click_y / cell_size);
+
+	if(game.scene==1){
+		tutorial();
+	}else if(game.scene==2){
+		if(game.phase==1)	{check_fireengine_pos(click_cell_x,click_cell_y);}
+		else if(game.phase==2)	{check_ambulance_pos(click_cell_x,click_cell_y);}
+		else if(game.phase==3)	{check_player_pos(click_cell_x,click_cell_y);}
+	}else if(game.scene==3){
+		if(game.phase==0)	{convinient_choice(click_cell_x,click_cell_y);}
+		else if(game.phase==1)	{player_move(game.turn,click_cell_x,click_cell_y);}
+		else if(game.phase==2)	{chop(click_cell_x,click_cell_y);}
+		else if(game.phase==3)	{extinguish(click_cell_x,click_cell_y);}
+		else if(game.phase==4)	{}
+		else if(game.phase==5)	{drive(click_cell_x,click_cell_y);}
+		else if(game.phase==6)	{}
+		else if(game.phase==7)	{}
+		else if(game.phase==8)	{ex_action(click_cell_x,click_cell_y);}
+
+	}else if(game.scene==4){
+		if(game.phase==0)	{}//ターン終了確認
+		else if(game.phase==1)	{flashover();}//🔥
+		else if(game.phase==2)	{hazmat_check();}//フラッシュオーバー
+		else if(game.phase==3)	{hotspot_check();}//危険物チェック
+		else if(game.phase==4)	{dead_check();}//ホットスポットチェック
+
+	}else if(game.scene==5){
+		if(game.phase==0)	{enter_start_menu();}//ゲームエンド
+		else if(game.phase==1)	{reentry(click_cell_x,click_cell_y);}//プレイヤーリスポーン地点選択
+		else if(game.phase==2)	{refill_poi();}//プレイヤーリスポーン確認
+		else if(game.phase==3)	{pass_turn();}
+
+	}
+
+}
+
+function mousemove_board(e){
+	rect = game_display.getBoundingClientRect();
+	mouse_x = e.clientX - Math.floor(rect.left);
+	mouse_y = e.clientY - Math.floor(rect.top);
+
+	mouse_cell_x = Math.floor(mouse_x / cell_size);
+	mouse_cell_y = Math.floor(mouse_y / cell_size);
+}
+
+function click_rewind(){
+
+	if(game.phase==0 && game.scene==3){
+		load_game();
+	}
+}
+
+
+function click_option(a){
+
+	if(game.scene==0){//スタートメニュー
+		if(game.phase==0)	{branch_start_menu(a);}
+		else if(game.phase==1)	{choose_difficulty(a);}//人数選択を伝えて難易度を選ばせる
+		else if(game.phase==2)	{choose_map(a);}//難易度を伝えてマップを選択させる
+		else if(game.phase==3)	{confirm_map(a);}//マップの確認
+		else if(game.phase==4)	{final_confirm_to_start(a);}//その結果を伝えさせる。
+		else if(game.phase==5)	{choose_tutorial(a);}//チュートリアルを選ばせる
+		else if(game.phase==6)	{confirm_load_data(a);}//その結果を伝えさせる。
+	}else if(game.scene==1){
+		tutorial();
+	}else if(game.scene==2){//セットアップ
+		if(game.phase==0)	{check_role_dupe();}
+		else if(game.phase==1)	{choose_start_pos();}//消防車設置
+		else if(game.phase==2)	{choose_start_pos();}//救急車設置
+		else if(game.phase==3)	{choose_start_pos();}//プレイヤー開始位置選択
+		else if(game.phase==4)	{setup_last_check_responce(a);}//最後の確認
+	}else if(game.scene==3){//ターン中メインフェイズ
+		if(game.phase==0)	{action_select(a)}
+		else if(game.phase==1)	{choose_action();}//移動
+		else if(game.phase==2)	{choose_action();}//壁扉
+		else if(game.phase==3)	{choose_action();}//消火
+		else if(game.phase==4)	{grab(a);}//掴む
+		else if(game.phase==5)	{drive(a);}//走行
+		else if(game.phase==6)	{deckgun(a);}//放水
+		else if(game.phase==7)	{role_change_check();}//職業チェンジ
+		else if(game.phase==8)	{ex_action(a);}//特殊アクション
+
+	}else if(game.scene==4){//終了ステップ
+		if(game.phase==0)	{enter_end_phase(a);}//ターン終了確認
+		else if(game.phase==1)	{flashover();}//🔥
+		else if(game.phase==2)	{hazmat_check();}//フラッシュオーバー
+		else if(game.phase==3)	{hotspot_check();}//危険物チェック
+		else if(game.phase==4)	{dead_check();}//ホットスポットチェック
+		else if(game.phase==5)	{continue_check(a);}//7人目救出後のコンティニューちゅえっく
+
+	}else if(game.scene==5){//クリーンナップ
+		if(game.phase==0)	{enter_start_menu();}//ゲームエンド
+		else if(game.phase==1)	{reentry(a);}//プレイヤーリスポーン地点選択
+		else if(game.phase==2)	{refill_poi();}//プレイヤーリスポーン確認
+		else if(game.phase==3)	{pass_turn();}//POI補充
+	}
+
+}
+
+
+//---------ゲーム関連-------------------
+
+function roll(){roll8();roll6();}//ダイスを振る
+function roll6(){dice6 = Math.floor(Math.random()*6)+1;}//6面ダイスを振る
+function roll8(){dice8 = Math.floor(Math.random()*8)+1;}//8面ダイスを振る
+function invert6(){dice6 = 7 - dice6;}//6面ダイスをひっくり返す
+function invert8(){dice8 = 9 - dice8;}//8面ダイスをひっくり返す
+
+
+function init_map(str){//マップの読み込み
+
+	board.tate = map[str].tate
+	board.yoko = map[str].yoko
+
+	board.hotspot = [];
+	board.fire = [];
+	board.wall_yoko = [];
+	board.wall_tate = [];
+
+
+	board.marker = [];
+	board.ambulance_place = map[str].ambulance_place;
+	board.fireengine_place = map[str].fireengine_place;
+	board.poi_move = [];
+	board.poi_end = map[str].poi_end;
+	board.ambulance_pos = -1;
+	board.fireengine_pos = -1;
+
+	for(var x=0;x<board.yoko;x++){
+		board.hotspot[x]=[];
+		board.fire[x]=[];
+		board.wall_tate[x]=[];
+		board.wall_yoko[x]=[];
+		board.marker[x]=[];
+		board.poi_move[x] = [];
+		for(var y=0;y<board.tate;y++){
+			board.hotspot[x][y] =0;
+			board.fire[x][y] =0;
+			board.marker[x][y] =0;
+			board.poi_move[x][y] = map[str].poi_move[y][x];
+			board.wall_tate[x][y] = map[str].wall_tate[y][x];
+			board.wall_yoko[x][y] = map[str].wall_yoko[y][x];
+		}
+	}
+	poi=[];
+	player=[];
+	hazmat=[];
+	draw_board();	
+}
+
+function setup_game(){//盤面のセットアップ
+
+	game.scene = 2;
+	game.phase = 0;
+
+	//マーカーの初期化
+	hazmat = [];
+	poi = [];
+	player = [];
+	board.hotspot = [];
+	board.fire_barker = [];
+	board.ambulance_pos = -1;
+	board.fireengine_pos = -1;
+	for(var x=0;x<board.yoko;x++){
+		board.hotspot[x]=[];
+		board.fire[x]=[];
+		for(var y=0;y<board.tate;y++){
+			board.hotspot[x][y] =0;
+			board.fire[x][y] =0;
+		}
+	}
+
+	game.damage = 24;
+	game.alive = 0;
+	game.dead = 0;
+
+	game.victim_rest = 10;
+	game.false_rest = 5;
+
+	game.poi_rest = game.victim_rest + game.false_rest;
+
+
+	if(game.difficulty<0){
+		board.fire[2][2]=2;
+		board.fire[3][2]=2;
+		board.fire[2][3]=2;
+		board.fire[3][3]=2;
+		board.fire[4][3]=2;
+		board.fire[5][3]=2;
+		board.fire[4][4]=2;
+		board.fire[6][5]=2;
+		board.fire[7][5]=2;
+		board.fire[6][6]=2;
+		
+		poi.push({x:4,y:2,grab:0,who:0,status:1});game.poi_rest--;
+		poi.push({x:1,y:5,grab:0,who:0,status:1});game.poi_rest--;
+		poi.push({x:8,y:5,grab:0,who:0,status:1});game.poi_rest--;
+
+
+		for(var i=0;i<nbr_player;i++){
+			tmp="p"+(i+1);
+			player.push({n:i+1,x:-1,y:0,color:p_color[i],chara:tmp,role:"generalist",grab:[],ap:0});
+		}
+		choose_start_pos();
+	}else{
+		//最初の爆発
+		roll();
+		dice6=dice6%2+3;
+		dice8=dice8%4+3;
+		board.hotspot[dice8][dice6]=1;
+		board.fire[dice8][dice6]=2;
+		explode(dice8,dice6);
+
+		//二回目の爆発
+		roll();
+		while(board.fire[dice8][dice6]!=0){roll();}
+		board.hotspot[dice8][dice6]=1;
+		board.fire[dice8][dice6]=2;
+		explode(dice8,dice6);
+	
+		//三回目の爆発
+		invert8();
+		while(board.fire[dice8][dice6]!=0){roll6();}
+		board.hotspot[dice8][dice6]=1;
+		board.fire[dice8][dice6]=2;	
+		explode(dice8,dice6);
+
+		//英雄用の四回目の爆発
+		if(game.difficulty==2){
+			roll();
+			board.hotspot[dice8][dice6]=1;
+			board.fire[dice8][dice6]=2;
+			explode(dice8,dice6);
+		}
+
+		//危険物の設置
+		for(var i=0;i<3+game.difficulty;i++){
+			roll();
+			while(board.fire[dice8][dice6]!=0){roll();}
+			hazmat.push({x:dice8,y:dice6,grab:0,who:0,status:1});
+		}
+
+		//POIの設置
+		for(var i=0;i<3;i++){
+			roll();
+			while(board.fire[dice8][dice6]!=0){roll();}
+			poi.push({x:dice8,y:dice6,grab:0,who:0,status:1});
+			game.poi_rest--;
+		}
+		clear_message();
+		add_message("プレイヤーのロールを選択してください。");
+		show_role(nbr_player);	
+		//爆発後の外周の消火
+		extinguish_around();
+	}
+
+
+
+	draw_board();
+}
+
+
+function check_role_dupe(){//ロールの重複チェック
+
+	for(var i=0;i<role_selector.length;i++){
+		for(j=i+1;j<role_selector.length;j++){
+			if(role_selector[i].value == role_selector[j].value){
+				clear_message();
+				add_message("同じロールが複数キャラクターで選択されています。");
+				add_message("重複がないようロールを選択してください。");
+				return false;
+			}
+		}
+	}
+
+	player = [];
+
+	for(var i=0;i<role_selector.length;i++){
+		tmp="p"+(i+1);
+		player.push({n:i+1,x:-1,y:0,color:p_color[i],chara:tmp,role:role_selector[i].value,grab:[],ap:0});
+		console.log("キャラ"+i+"は"+role_selector[i].value+"で登録");
+	}
+
+	additional_hotspot();
+}
+
+function additional_hotspot(){//追加の高温点
+
+	var tmp = 0;
+	if(game.difficulty>0){
+		tmp+=3;
+	}
+	if(game.turn>3){
+		tmp+= 3;
+	}else{
+		tmp+= 2;
+	}
+
+	for(var i = 0;i<tmp;i++){
+		roll();
+		while(board.hotspot[dice8][dice6]!=0){roll();}
+		board.hotspot[dice8][dice6]=1;
+		console.log("地点["+dice8+","+dice6+"]に追加の高温点");
+	}
+
+	game.hotspot_remain = 6;
+	if(game.difficulty >= 2){game.hotspot_remain=12;}
+
+	add_message("追加の高温点を振り分けた。");
+	choose_start_pos();
+}
+
+function choose_start_pos(){
+	show_option(["やりなおす"]);
+	game.scene=2;
+	game.phase=1;
+	game.turn = 0;
+	board.fireengine_pos=-1;
+	board.ambulance_pos=-1;
+	for(var i=0;i<player.length;i++){
+		player[i].x=-1;
+	}
+	if(game.difficulty < 0){choose_player_pos();}
+	else{choose_fireengine_pos();}
+	draw_board();
+}
+
+function choose_fireengine_pos(){
+	clear_message();
+	add_message("消防車の位置(<span style='background-color:"+fireengine_color+"'>　</span>)を選択してください。");
+}
+
+function check_fireengine_pos(xx,yy){
+	var tmp=-1;
+	for(var i=0;i<board.fireengine_place.length;i++)
+	for(var j=0;j<board.fireengine_place[i].length;j++)
+	if(board.fireengine_place[i][j][0]==xx && board.fireengine_place[i][j][1]==yy)tmp=i;
+
+	if(tmp>=0){
+		board.fireengine_pos = tmp;
+		draw_board();
+		choose_ambulance_pos();
+	}
+}
+
+function choose_ambulance_pos(){
+	game.phase = 2;	
+	clear_message();
+	add_message("救急車の位置(<span style='background-color:"+ambulance_color+"'>　</span>)を選択してください。");
+}
+
+function check_ambulance_pos(xx,yy){
+	var tmp = -1;
+	for(var i=0;i<board.ambulance_place.length;i++)
+	for(var j=0;j<board.ambulance_place[i].length;j++)
+	if(board.ambulance_place[i][j][0]==xx && board.ambulance_place[i][j][1]==yy)tmp=i;
+
+	if(tmp>=0){
+		board.ambulance_pos = tmp;
+		draw_board();
+		choose_player_pos();
+	}
+}
+
+function choose_player_pos(){
+	game.phase=3;
+	clear_message();
+	add_message((game.turn+1)+"人目のプレイヤー駒の位置を選択してください。");
+}
+
+function check_player_pos(xx,yy){
+
+	if(xx!=0 && xx!=board.yoko-1 && yy!=0 && yy!=board.tate-1)return false;
+
+	player[game.turn].x = xx;
+	player[game.turn].y = yy;
+
+	draw_board();
+	game.turn++;
+	if(game.turn<player.length){
+		choose_player_pos();
+	}else{
+		setup_last_check();
+	}
+}
+
+function setup_last_check(){
+	game.phase = 4;
+	clear_message();
+	add_message("このスタート位置でよろしいでしょうか？");
+	show_option(["はい","　","いいえ"]);
+}
+
+function setup_last_check_responce(a){
+	if(a==0){
+		game.turn = 0;
+		take_my_turn();
+	}
+	if(a==2){choose_start_pos();}
+}
+
+
+//--ターン中の動作--------------------------
+
+function take_my_turn(){
+	game.scene = 3;
+	clear_message();
+	if(game.difficulty<0){
+		game.ap = 4 + player[game.turn].ap;
+		game.sap = 0;
+	}else{
+		player[game.turn].ex_act = [];
+		game.ap = role[player[game.turn].role].ap+player[game.turn].ap;
+		game.sap = role[player[game.turn].role].sap;
+	}
+	rewindable = false;
+	choose_action();
+}
+
+function save_game(){
+	board_json = JSON.stringify(board);
+	game_json = JSON.stringify(game);
+	player_json = JSON.stringify(player);
+	poi_json = JSON.stringify(poi);
+	hazmat_json = JSON.stringify(hazmat);
+
+	localStorage.setItem("scatolo's_rescue_board",board_json);
+	localStorage.setItem("scatolo's_rescue_game",game_json);
+	localStorage.setItem("scatolo's_rescue_player",player_json);
+	localStorage.setItem("scatolo's_rescue_poi",poi_json);
+	localStorage.setItem("scatolo's_rescue_hazmat",hazmat_json);
+}
+
+function load_game(){
+	var vvv=game.version;
+	board = JSON.parse(board_json);
+	game = JSON.parse(game_json);
+	player = JSON.parse(player_json);
+	poi = JSON.parse(poi_json);
+	hazmat = JSON.parse(hazmat_json);
+	game.version = vvv;
+	if(game.scene==3 && game.phase ==0){
+		clear_message();
+		choose_action();
+	}else if(game.scene==4 && game.phase ==1){
+		clear_message();
+		add_message("ロード完了。地点["+game.firespot_x+","+game.firespot_y+"]の炎の拡大から再開。");
+		show_option(["次へ"]);
+		
+	}else if(game.scene==5 && game.phase ==3){
+		clear_message();
+		add_message("ロード完了。不審箇所を補充した時点から再開。");
+		show_option(["次へ"]);
+		
+	}
+}
+function choose_action(){
+	draw_board();
+	game.scene = 3;
+	game.phase = 0;
+	if(collapse_check()){return false;}
+	add_message("アクションを選択してください。");
+	var sss = [];
+	var tmp = "";
+	if(player[game.turn].grab.length==0){sss.push("移動");}
+	else{
+		for(var i=0;i<player[game.turn].grab.length;i++){
+			if(player[game.turn].grab[i][0]==1){
+				if(poi[player[game.turn].grab[i][1]].status==1)tmp += emoji["poi"].chara;
+				if(poi[player[game.turn].grab[i][1]].status==2)tmp += emoji["victim"].chara;
+				if(poi[player[game.turn].grab[i][1]].status==3)tmp += emoji["healed"].chara;
+			}
+			if(player[game.turn].grab[i][0]==2)tmp += emoji["hazmat"].chara;
+		}
+		sss.push("運ぶ("+tmp+")");
+	}
+	sss.push("扉の開閉/壁を壊す");
+	sss.push("消火");
+	sss.push("つかむ/手放す");
+	if(game.difficulty>=0){
+		sss.push("車両の運転");
+		sss.push("消防車の放水");
+		sss.push("ロールの変更");
+		for(var i=0;i<role[player[game.turn].role].ex_action.length;i++)//特殊あくしょん
+			sss.push(role[player[game.turn].role].ex_action[i].name);
+	}
+	show_option(sss);
+	if(rewindable==false){
+		save_game();
+		rewindable = true;
+	}
+}
+
+function convinient_choice(xx,yy){
+
+	if(player[game.turn].x!=xx && player[game.turn].y!=yy)return false;
+	if(player[game.turn].x==xx && Math.abs(player[game.turn].y-yy)!=1) return false;
+	if(player[game.turn].y==yy && Math.abs(player[game.turn].x-xx)!=1) return false;
+
+	var xm;
+	var ym;
+	var wall;
+	if(player[game.turn].x==xx){wall = board.wall_tate;}
+	if(player[game.turn].y==yy){wall = board.wall_yoko;}
+
+	xm = Math.min(xx,player[game.turn].x);
+	ym = Math.min(yy,player[game.turn].y);
+
+	clear_message();
+
+	if(wall[xm][ym]>2){choose_action();return false;}
+	if(wall[xm][ym]==2){chop(xx,yy);return true;}
+
+	if(board.fire[xx][yy]>0){extinguish(xx,yy);return false;}
+	else{player_move(game.turn,xx,yy);return false;}
+}
+
+function action_select(a){
+	if(a==0){
+		game.phase = 1;
+		clear_message();
+		add_message("移動先を選択してください。");
+		show_option(["やめる"]);	
+	}else if(a==1){
+		game.phase = 2;
+		clear_message();
+		add_message("どちらの方向の扉を開閉（壁を破壊）しますか？");
+		show_option(["やめる"]);	
+	}else if(a==2){
+		game.phase = 3;
+		clear_message();
+		add_message("どの煙・炎を消しますか？");
+		show_option(["やめる"]);	
+	}else if(a==3){
+		game.phase = 4;
+		clear_message();
+		var sss = [];
+		for(var i=0;i<poi.length;i++){
+			if(poi[i].x==player[game.turn].x && poi[i].y==player[game.turn].y){
+				if(poi[i].status>0){sss.push(poi_name[poi[i].status]);}
+			}
+		}
+		for(var i=0;i<hazmat.length;i++){
+			if(hazmat[i].x==player[game.turn].x && hazmat[i].y==player[game.turn].y){
+				if(hazmat[i].status==1){sss.push("危険物");}
+			}
+		}
+		if(sss.length>0){
+			add_message("どのオブジェクトを掴みますか？");
+			sss.push("何も持たない");
+			show_option(sss);
+		}else{
+			add_message("そこには何もない！");
+			choose_action();
+		}
+		
+	}else if(a==4){
+		if(is_payable(5)==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+		game.phase = 5;
+		boarding_member = [];
+		vehicle_driven = 0;
+		vehicle_destination = 0;
+		clear_message();
+		add_message("車両の行き先を選択してください。");
+		show_option(["やめる"]);
+	}else if(a==5){
+		game.phase = 6;
+		clear_message();
+		var car = board.fireengine_place[board.fireengine_pos];
+		var tmp = false;
+
+		if(is_payable(6)==false){
+			add_message("アクションポイントが足りない！");
+			choose_action();
+			return false;
+		}
+
+		for(i=0 ;i<player.length;i++){
+			if(is_in_sight(i)){
+				console.log((i+1)+"がいる!");
+				add_message("放水範囲に他のプレイヤーがいる！");
+				choose_action();
+				return false;
+			}
+		}
+		for(i=0 ;i<car.length;i++){
+			if(player[game.turn].x== car[i][0] &&player[game.turn].y== car[i][1]){
+				tmp =true;
+			}
+		}
+		
+		if(tmp){
+			rerolled6 = true;
+			rerolled8 = true;
+			add_message("消防車から放水しますか？");
+			show_option(["はい","　","いいえ"]);
+		}else{
+			add_message("いま消防車の所にいない！");
+			choose_action();
+		}
+
+	}else if(a==6){
+		game.phase = 7;
+		clear_message();
+		if(role[player[game.turn].role].ap + player[game.turn].ap != game.ap || role[player[game.turn].role].sap != game.sap){
+			add_message("ターンのはじめでなければ変更できない。");
+			choose_action();
+			return;
+		}
+		var tmp = false;
+		for(var i = 0;i<board.fireengine_place[board.fireengine_pos].length;i++){
+			if(board.fireengine_place[board.fireengine_pos][i][0] == player[game.turn].x && board.fireengine_place[board.fireengine_pos][i][1] == player[game.turn].y){
+				tmp = true;
+			}
+		}
+		if(tmp){
+			add_message("ロールを選択してください。");
+			show_role(1);
+		}else{
+			add_message("消防車にいないと変更できない。");
+			choose_action();
+		}
+	}else if(a>=7){
+		game.phase = 8;
+		ex_act_count = a-7;
+		ex_select = 0;
+		ex_action(a);
+	}
+}
+
+function player_move(who,xx,yy){
+	if(player[who].x!=xx && player[who].y!=yy)return false;
+	if(player[who].x==xx && Math.abs(player[who].y-yy)!=1) return false;
+	if(player[who].y==yy && Math.abs(player[who].x-xx)!=1) return false;
+
+	if(player[who].x==xx && board.wall_tate[xx][Math.min(yy,player[who].y)]>1)return false;
+	if(player[who].y==yy && board.wall_yoko[Math.min(xx,player[who].x)][yy]>1)return false;
+
+
+	if(is_payable(1,who,xx,yy)==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+	if(board.fire[xx][yy]==2 && player[who].grab.length>0){
+		if(player[who].grab[0][0]==1){
+			add_message("要救助者を連れているときに炎に侵入するわけにはいかない！");
+			choose_action();
+			return false;
+		}
+		if(player[who].grab[0][0]==2){
+			add_message("危険物を持っているときに炎に侵入するわけにはいかない！");
+			choose_action();
+			return false;
+		}
+	}
+
+	player[who].x=xx;
+	player[who].y=yy;
+
+	for(var i=0;i<player[game.turn].grab.length;i++){
+		if(player[who].grab[i][0]==1){
+			poi[player[who].grab[i][1]].x=xx;
+			poi[player[who].grab[i][1]].y=yy;
+		}else if(player[who].grab[i][0]==2){
+			hazmat[player[who].grab[i][1]].x=xx;
+			hazmat[player[who].grab[i][1]].y=yy;
+		}
+	}
+	pay_cost(1,who,xx,yy);
+
+	//不信個所の開示
+
+	for(var i=0;i<poi.length;i++){
+		if(poi[i].x == xx && poi[i].y == yy && poi[i].status == 1){
+			flip_poi(i);rewindable = false;
+		}
+	}
+
+
+	if(resolve_grab()==false){
+		choose_action();
+
+		return true;
+	}
+}
+
+function resolve_grab(){
+
+	var alive_adding=false;
+	var car = board.ambulance_place[board.ambulance_pos];
+	for(var i=0;i<poi.length;i++){
+		if(game.difficulty<0){
+
+			if(poi[i].x == 0 || poi[i].x >= board.yoko-1 || poi[i].y == 0 || poi[i].y >= board.tate-1){
+				if(poi[i].status >= 2){
+					if(poi[i].grab>0){release(1,i);}
+					poi[i].status=0;
+					game.alive++;
+					alive_adding=true;
+					add_message("要救助者を搬送した。");
+				}
+			}
+		}else{
+			for(var j=0;j<car.length;j++){
+				if(poi[i].x == car[j][0] && poi[i].y == car[j][1] && poi[i].status >= 2){
+					if(poi[i].grab>0){release(1,i);}
+					poi[i].status=0;
+					game.alive++;
+					alive_adding=true;
+					add_message("要救助者を搬送した。");
+				}
+			}
+		}
+	}
+
+	for(var i=0;i<hazmat.length;i++){
+		if(hazmat[i].x == 0 || hazmat[i].x >= board.yoko-1 || hazmat[i].y == 0 || hazmat[i].y >= board.tate-1){
+			
+			if(hazmat[i].status>0){
+				if(hazmat[i].grab>0){release(hazmat[i].who);}
+				hazmat[i].status = 0;
+				add_message("危険物を処分した。");
+			}
+		}
+	}
+
+	if((game.alive==7 || game.alive+game.dead>=10) && alive_adding){
+		add_message("勝利！このゲームを終了しますか？");
+		game.scene=4;
+		game.phase=5;
+		show_option(["続ける","　","タイトルに戻る"]);
+		draw_board();
+		return true;
+	}else if(game.alive>=10 ){
+		add_message("完　全　勝　利　！　すべての要救助者を救い出した！");
+		game.scene=5;
+		game.phase=0;
+		show_option(["メニューに戻る"]);
+		draw_board();
+		return true;
+	}else if(game.alive>=7 && game.alive+game.dead>=10 ){
+		add_message("勝利！いくらかの犠牲者は出たが、すべての要救助者が判明し対応を終えた。");
+		game.scene=5;
+		game.phase=0;
+		show_option(["メニューに戻る"]);
+		draw_board();
+		return true;
+	}
+
+
+	return false;
+}
+
+function is_can_go_safe(xx,yy,p,d){//残りAPでそこにいて安全かの判定
+	//if(p<0){console.log("pが0未満で投げられてる！");}
+	//console.log("x:"+xx+" y:"+yy+" p:"+p+" d:"+d);
+	if(board.fire[xx][yy]<2)return true;
+
+	var vd = board.fire[xx][yy];
+	var vp = p;
+	if(player[game.turn].role=="cafs"){vp+=game.sap;}
+
+	//足下を消火して難を逃れられるか
+	while(vp>0){
+		vd--;vp--;
+		if(role[player[game.turn].role].dis_ex==true)vp--;
+		if(vd < 2 && vp >=0){return true;}	
+	};
+
+	for(var i=0;i<4;i++){
+		var xm = Math.round(xx+Math.sin(i*Math.PI/2));
+		var ym = Math.round(yy+Math.cos(i*Math.PI/2));
+		vp =p;
+		vd =d;
+		var vw ;
+		
+		if(player[game.turn].role=="rescue"){vp += game.sap;}
+
+		if(xm==xx){vw = board.wall_tate[xx][Math.min(yy,ym)];}
+		if(ym==yy){vw = board.wall_yoko[Math.min(xx,xm)][yy];}
+
+		//普通は無傷の壁を壊してまで動くくらいなら足下の火を煙にした方が早いけど
+		//エクスパンションで消火が出来ないやつがいるらしいのでちゃんと判定を作っておく
+		if(vw==3){
+			if(player[game.turn].role=="rescue"){vp-=3;vd-=2;}
+			else{vp-=5;vd-=2;}
+		}else if(vw==2){
+			if(player[game.turn].role=="rescue"){vp-=2;vd-=1;}
+			else{vp-=3;vd-=1;}
+		} if(vw==2){
+			vp-=2;
+		}else{
+			vp-=1;
+		}
+
+		if(vp<0 || vd<=0) continue;
+
+		if(board.fire[xm][ym]<2)return true;		
+		if(is_can_go_safe(xm,ym,vp,vd)){return true;}
+	}
+	
+	return false;
+}
+
+
+
+function chop(xx,yy){
+
+	if(player[game.turn].x!=xx && player[game.turn].y != yy)return false;
+	if(player[game.turn].x==xx && Math.abs(player[game.turn].y-yy) != 1) return false;
+	if(player[game.turn].y==yy && Math.abs(player[game.turn].x-xx) != 1) return false;
+
+	//console.log("となりではある");
+	var wall;
+	if(player[game.turn].x==xx){wall = board.wall_tate;}
+	if(player[game.turn].y==yy){wall = board.wall_yoko;}
+
+	//console.log("xx:" + xx +"  p.x:"+player[game.turn].x);
+	//console.log("yy:" + yy +"  p.y:"+player[game.turn].y);
+
+	xx = Math.min(xx,player[game.turn].x);
+	yy = Math.min(yy,player[game.turn].y);
+
+	//console.log("[" + xx +","+yy+"]を壊す");
+	
+
+	if(wall[xx][yy]==0)return false;
+
+
+	if(is_payable(2,wall[xx][yy])==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+
+
+	//console.log("アクションも十分ある");
+	//if(is_can_go_safe(player[game.turn].x,player[game.turn].y,game.ap-action_cost(2,wall[xx][yy]),game.damage)==false){
+	//		add_message("炎のなかでそんなことをしている場合ではない！");
+	//		return false;
+	//}
+	
+	pay_cost(2,wall[xx][yy]);
+	
+	if(wall[xx][yy] >= 3){deal_damage();}
+	clear_message();
+
+	if(wall[xx][yy] ==4 ){
+		add_message("壁にヒビを入れた。");
+	}else if(wall[xx][yy]==3){
+		add_message("壁を壊し開通させた。");
+	}else if(wall[xx][yy]==2){
+		add_message("扉を開けた。");
+	}else if(wall[xx][yy]==1){
+		add_message("扉を閉めた。");
+	}
+
+	wall[xx][yy] = wall_next_status(wall[xx][yy]);
+
+	if(collapse_check()){return false;}
+	else{choose_action();}
+}
+
+function wall_next_status(a){
+	if(a==4)return 3;
+	if(a==3)return 0;
+	if(a==2)return 1;
+	if(a==1)return 2;
+}
+
+
+function extinguish(xx,yy){
+	if(player[game.turn].x!=xx && player[game.turn].y!=yy)return false;
+	if(player[game.turn].x==xx && Math.abs(player[game.turn].y-yy)>1)return false;
+	if(player[game.turn].y==yy && Math.abs(player[game.turn].x-xx)>1)return false;
+	if(board.fire[xx][yy]==0) return false;
+
+	if(player[game.turn].x != xx || player[game.turn].y != yy ){
+		if(player[game.turn].x==xx && board.wall_tate[xx][Math.min(yy,player[game.turn].y)]>1)return false;
+		if(player[game.turn].y==yy && board.wall_yoko[Math.min(xx,player[game.turn].x)][yy]>1)return false;
+	}
+
+	if(is_payable(3)==false){add_message("アクションポイントが足りない！");choose_action();return false;}
+
+
+	board.fire[xx][yy]--;
+
+
+	if(is_can_go_safe(player[game.turn].x,player[game.turn].y,game.ap-action_cost(3),game.damage)==false){
+			add_message("炎の中にいるのに隣を消している場合ではない！");
+			board.fire[xx][yy]++;
+			return false;
+	}
+
+	pay_cost(3);
+	choose_action();
+}
+
+function grab(a,who = game.turn){
+
+	for(var i=0;i<poi.length;i++){
+		if(poi[i].x==player[who].x && poi[i].y==player[who].y && poi[i].status!=0){
+			a--;
+			if(a<0){
+				switch_grabbing(who,1,i);
+				choose_action();
+				return true;
+			}
+		}
+	}
+	for(var i=0;i<hazmat.length;i++){
+		if(hazmat[i].x==player[who].x && hazmat[i].y==player[who].y && hazmat[i].status!=0){
+			a--;
+			if(a<0){
+				switch_grabbing(who,2,i);
+				choose_action();
+				return true;
+			}
+		}
+	}
+	if(a==0)release(who);
+	choose_action();
+}
+
+function switch_grabbing(who,what,which){
+
+	var mono;
+
+	if(what==1)mono = poi;
+	if(what==2)mono = hazmat;
+
+	for(var i=0;i<player[who].grab.length;i++){
+		if(player[who].grab[i][0]==what && player[who].grab[i][1]==which){
+			release(what,which);
+			if(what==2){add_message("危険物を手放した。");}
+			if(what==1){add_message(poi_name[mono[which].status]+"を手放した。");}
+			return true;
+		}
+	}
+
+	if(what==2){
+		release(who);
+		release(what,which);
+		player[who].grab.push([2,which])
+		mono[which].grab = 1;
+		mono[which].who= who;
+		add_message("危険物をつかんだ。");
+		return true;
+	}
+	if(what==1){
+		for(var i=0;i<hazmat.length;i++){
+			if(hazmat[i].status>0 && hazmat[i].grab==1 && hazmat[i].who==who ){
+					release(2,i);
+			}
+		}
+		if(mono[which].status==3){
+			for(var i=0;i<poi.length;i++){
+				if(poi[i].status==3 && poi[i].grab==1 && poi[i].who==who ){
+					release(1,i);
+				}
+			}
+		}else{
+			for(var i=0;i<poi.length;i++){
+				if(poi[i].status<3 && poi[i].grab==1 && poi[i].who==who ){
+					release(1,i);
+				}
+			}
+		}
+		release(what,which);
+		player[who].grab.push([1,which])
+		mono[which].grab = 1;
+		mono[which].who= who;
+		add_message(poi_name[mono[which].status]+"をつかんだ。");
+		return true;
+		
+
+	}
+}
+
+
+function release(p,whi=-1){
+	var mono;
+	if(whi<0){
+		for(var i=0;i<player[p].grab.length;i++){
+			if(player[p].grab[i][0]==1)mono = poi;
+			if(player[p].grab[i][0]==2)mono = hazmat;
+			mono[player[p].grab[i][1]].grab=0;
+			mono[player[p].grab[i][1]].who=0;
+		}
+		player[p].grab = [];
+
+	}else{
+
+		if(p==1)mono = poi;
+		if(p==2)mono = hazmat;
+
+		if(mono.grab==0)return false;
+
+		for(var i=0;i<player[mono[whi].who].grab.length;i++){
+			if(player[mono[whi].who].grab[i][0] == p && player[mono[whi].who].grab[i][1] == whi)
+				player[mono[whi].who].grab.splice(i,1);
+		}
+
+		mono[whi].grab=0;
+		mono[whi].who=0;
+	}
+	
+}
+
+function drive(xx,yy = -1){//車両の走行処理。
+	var pos;
+	if(vehicle_driven==1){pos = board.fireengine_pos;}
+	if(vehicle_driven==2){pos = board.ambulance_pos;}
+
+	if(vehicle_driven==0){choose_stop_spot(xx,yy);}
+	else if(vehicle_destination != pos){choose_riding_player(xx,yy);}
+	else{choose_dismount_pos(xx,yy);}
+}
+
+function choose_stop_spot(xx,yy){//場所指定のクリックがなされたら。
+
+	if(yy<0){choose_action();return false;}
+
+	var pos;
+	var car;
+	var im_here = -1;
+
+	//クリックされたところがどの車種のどこのポジションか見る
+	car = board.ambulance_place;
+	pos = board.ambulance_pos;
+	for(var i=0;i<car.length;i++){
+		for(var j=0;j<car[i].length;j++){
+			if(xx == car[i][j][0] && car[i][j][1] == yy){
+				vehicle_driven = 2;
+				vehicle_destination = i;
+			}
+		}
+	}
+
+	car = board.fireengine_place;
+	pos = board.fireengine_pos;
+	for(var i=0;i<car.length;i++){
+		for(var j=0;j<car[i].length;j++){
+			if(player[game.turn].x == car[i][j][0] && player[game.turn].y == car[i][j][1]){
+				im_here =i;
+			}
+			if(xx == car[i][j][0] && car[i][j][1] == yy){
+				vehicle_driven = 1;
+				vehicle_destination = i;
+			}
+		}
+	}
+				
+	if(vehicle_driven==1){
+		car = board.fireengine_place;
+		pos = board.fireengine_pos;
+	}else if(vehicle_driven==2){
+		car = board.ambulance_place;
+		pos = board.ambulance_pos;
+	}else{
+		return false;
+	}
+
+	if(vehicle_driven==1 && pos != im_here){
+		add_message("いまあなたは消防車が駐まっているところにいない。");choose_action();return false;
+	}else if(vehicle_destination == pos){
+		add_message("既にそこに停車している。");choose_action();return false;
+	}else if(vehicle_destination != (pos+1)%car.length && vehicle_destination != (pos-1+car.length)%car.length){
+		add_message("いま停車している位置から見て隣の停車位置を選択してください。");choose_action();return false;
+	}
+
+	pay_cost(5);
+
+	//同じスペースにいるプレイヤーをboarding_memberにする
+	boarding_member = [];
+	//乗せるかどうか判断すべき人がいるかのフラグ
+	var tmp = false;
+	for(var i=0;i<player.length;i++){
+		for(var j=0;j<car[pos].length;j++){
+			if(player[i].x == car[pos][j][0] && car[pos][j][1] == player[i].y){
+				if(i==game.turn && vehicle_driven==1){boarding_member.push({n:i,r:2});}
+				else{boarding_member.push({n:i,r:0});tmp = true;}
+			}
+		}
+	}
+
+	//判断すべき人がいるんだったら選ばせる。
+	if(tmp){
+		add_message("搭乗者を選択してください。");
+		var sss = [];
+		for(var i=0;i<boarding_member.length;i++){
+			if(boarding_member[i].r==0){sss.push("プレイヤー"+(boarding_member[i].n+1)+"(降)");}
+			if(boarding_member[i].r==2){sss.push("プレイヤー"+(boarding_member[i].n+1)+"(運転)");}
+		}
+		sss.push("決定");
+		show_option(sss);
+		draw_board();
+		return true;
+	}else{//選ばないんだったら決定してしまう。
+		drive(boarding_member.length);
+		return true;
+	}
+}
+
+function choose_riding_player(xx,yy){//乗り降りの指定または
+	
+	if(yy>=0)return false;
+
+	pos = board.fireengine_place.length + board.fireengine_place.length;
+	if(xx < boarding_member.length){
+		if(boarding_member[xx].r < 2){boarding_member[xx].r = 1 - boarding_member[xx].r;}
+		var sss = [];
+		for(var i=0;i<boarding_member.length;i++){
+			if(boarding_member[i].r == 0){sss.push("プレイヤー" + (boarding_member[i].n+1) + "(降)");}
+			if(boarding_member[i].r == 1){sss.push("プレイヤー" + (boarding_member[i].n+1) + "(乗)");}
+			if(boarding_member[i].r == 2){sss.push("プレイヤー" + (boarding_member[i].n+1) + "(運転)");}
+		}
+		sss.push("決定");
+		show_option(sss);
+		return true;
+	}else{
+		pos = vehicle_destination;
+		if(vehicle_driven == 1){board.fireengine_pos = pos;}
+		if(vehicle_driven == 2){board.ambulance_pos = pos;}
+		for(i=0;i<boarding_member.length;i++){
+			if(boarding_member[i].r==0){
+				boarding_member.splice(i,1);
+				i--;
+			}
+		}
+		choose_dismount_pos(-1,1);
+	}
+}
+
+function choose_dismount_pos(xx,yy){
+
+	if(vehicle_driven == 1){pos = board.fireengine_pos;car = board.fireengine_place;}
+	if(vehicle_driven == 2){pos = board.ambulance_pos;car = board.ambulance_place;}
+
+	if(yy<0 && 0<=xx && xx<car[pos].length){
+		player[boarding_member[0].n].x=car[pos][xx][0];
+		player[boarding_member[0].n].y=car[pos][xx][1];
+		boarding_member.shift();
+	}else{
+		for(var j=0;j<car[pos].length;j++){
+			if(car[pos][j][0] == xx && car[pos][j][1] ==yy){
+				player[boarding_member[0].n].x=xx;
+				player[boarding_member[0].n].y=yy;
+				boarding_member.shift();
+			}
+		}
+	}
+
+	if(boarding_member.length>0){
+		clear_message();
+		add_message("プレイヤー"+(boarding_member[0].n+1)+"の降車位置を選択してください。");
+		var sss = [];
+		for(var i=0;i<car[pos].length;i++){
+			sss.push("地点["+car[pos][i][0]+","+car[pos][i][1]+"]");
+		}
+		show_option(sss);
+		draw_board();
+		return true;
+	}else{
+		resolve_grab();
+		choose_action();
+		return true;
+	}
+}
+
+function deckgun(a){
+
+	clear_message();
+
+	if(rerolled6 == true &&rerolled8 ==true){
+		if(a==0){
+			pay_cost(6);
+			game.phase = 0;save_game();game.phase = 6;//リセマラ糞野郎対策で先にコストだけもらっとく。		
+			roll();
+			rerolled6 = false;
+			rerolled8 = false;
+			a = -1;
+		}else{
+			choose_action();
+			return false;
+		}
+
+	}
+
+
+	if(a==3 || player[game.turn].role != "driver"){
+		roll();
+		a=0;
+	}
+	if(a==2){
+		roll6();
+		rerolled6 = true;
+	}
+	if(a==1){
+		if(rerolled8 == true){
+			roll6();
+			rerolled6 = true;
+		}else{
+			roll8();
+			rerolled8 = true;
+		}
+
+		if(rerolled8  &&rerolled6)a = 0;
+	}
+
+	if(a==0){
+		adjust_deckgun();
+		add_message("地点["+dice8+","+dice6+"]に放水！");
+		board.fire[dice8][dice6] = 0;
+		for(var i=0;i<4;i++){
+			var wall;
+			var xm = Math.round(dice8+Math.sin(i*Math.PI/2));
+			var ym = Math.round(dice6+Math.cos(i*Math.PI/2));
+			if(dice8 == xm){
+				wall = board.wall_tate;
+			}else{
+				wall = board.wall_yoko;
+			}
+			if(wall[Math.min(dice8,xm)][Math.min(dice6,ym)]<=1){
+				board.fire[xm][ym]=0;
+			}
+			
+		}
+		rewindable = false;
+		choose_action();
+	}else{
+		adjust_deckgun();
+		add_message("地点["+dice8+","+dice6+"]に放水しようとしてる。振り直しますか？");
+		draw_board();
+		draw_circle(dice8,dice6);
+		var sss=[];
+		sss.push("ここでいい");
+		if(rerolled8==false){sss.push("横方向を振り直し");}
+		if(rerolled6==false){sss.push("縦方向を振り直し");}
+		if(rerolled6==false && rerolled8==false){sss.push("どっちも振り直し");}
+		show_option(sss);
+	}
+
+
+}
+
+function adjust_deckgun(){
+	var car = board.fireengine_place;
+	var pos = board.fireengine_pos;
+	if((board.yoko/2 > board.fireengine_place[board.fireengine_pos][0][0]) != (board.yoko/2 > dice8)){
+		invert8();
+	}
+
+	if((board.tate/2 > board.fireengine_place[board.fireengine_pos][0][1]) != (board.tate/2 > dice6)){
+		invert6();
+	}
+}
+
+function is_in_sight(a){
+	var car = board.fireengine_place;
+	var pos = board.fireengine_pos;
+	if((board.yoko/2 > board.fireengine_place[board.fireengine_pos][0][0]) != (board.yoko/2 > player[a].x)){
+		return false;
+	}
+
+	if((board.tate/2 > board.fireengine_place[board.fireengine_pos][0][1]) != (board.tate/2 > player[a].y)){
+		return false;
+	}
+	if(player[a].x == 0 || player[a].x == board.yoko-1 || player[a].y == 0 || player[a].y == board.tate-1)return false;
+	return true;
+}
+
+function ex_action(xx,yy = -1){
+
+	var argt = role[player[game.turn].role].ex_action[ex_act_count].select[ex_select];
+	if(argt=="n"){
+		role[player[game.turn].role].ex_action[ex_act_count].action[ex_select]();
+	}else if(argt=="s"){
+		if(yy<0)role[player[game.turn].role].ex_action[ex_act_count].action[ex_select](xx);
+	}else if(argt=="f"){
+		if(yy>=0)role[player[game.turn].role].ex_action[ex_act_count].action[ex_select](xx,yy);
+	}else if(argt=="g"){
+		role[player[game.turn].role].ex_action[ex_act_count].action[ex_select](xx,yy);
+	}else{
+		alert(player[game.turn].role+"のex_act["+ex_act_count+"]のselect["+ex_select+"]が"+argt+"になってる");
+	}
+
+}
+
+function role_change_check(){
+	console.log("ロールチェンジのせんたく："+role_selector[0].value);
+	for(var i=0;i<player.length;i++){
+		if(role_selector[0].value == player[i].role){
+			clear_message();
+			if(i==game.turn){
+				add_message("既にあなたはそのロールです。");
+			}else{
+				add_message("同じロールを他のプレイヤーが持っています。");
+				add_message("重複がないようロールを選択してください。");
+			}
+			choose_action();
+			return false;
+		}
+	}
+
+
+	player[game.turn].role = role_selector[0].value;
+	game.ap = role[role_selector[0].value].ap + player[game.turn].ap;
+	game.sap = role[role_selector[0].value].sap;
+	
+	game.ap -= 2;
+	add_message(role[role_selector[0].value].name+"に変更した。");
+	console.log("キャラ"+(game.turn+1)+"は"+role_selector[i].value+"に変更");
+	
+
+	choose_action();
+	return false;
+
+
+}
+
+//---------------------------
+function begining_end_phase(){
+	if(game.scene==1)return;
+	if(board.fire[player[game.turn].x][player[game.turn].y] == 2){
+		add_message("炎の中にいる状態でターンは終了できない！");
+		choose_action();
+		return false;
+	}
+	game.scene = 4;
+	game.phase = 0;
+	clear_message();
+	add_message("ターンを終了しますか？");
+	show_option(["はい","　","いいえ"]);
+}
+
+function enter_end_phase(a){
+
+	if(a!=0){choose_action();return false;}
+
+	if(game.ap>4)game.ap=4;
+	player[game.turn].ap=game.ap;
+	
+	game.hotspot_flag = false;
+	clear_message();
+	roll();
+	expand_fire();
+}
+
+function expand_fire(){
+
+	game.scene = 4;
+	game.phase = 1;
+	add_message("地点["+dice8+","+dice6+"]で炎の拡大！");
+	show_option(["次へ"]);
+	if(board.fire[dice8][dice6] == 2){
+		explode(dice8,dice6);
+		add_message("爆発が起きる！");	
+	}else if(board.fire[dice8][dice6] == 1){
+		board.fire[dice8][dice6] = 2;
+		add_message("炎が上がる！");	
+	}else if(board.fire[dice8][dice6] == 0){
+		board.fire[dice8][dice6] = 1;
+		add_message("煙が立ちこめる！");	
+	}
+	game.firespot_x = dice8;
+	game.firespot_y = dice6;
+
+	draw_board();
+	draw_circle(dice8,dice6);
+	save_game();
+}
+
+function flashover(){
+	game.scene = 4;
+	game.phase = 2;
+	var tmp = false;
+	for(var xx=0;xx<board.yoko;xx++){
+		for(var yy=0;yy<board.tate;yy++){
+			if(board.fire[xx][yy]==1){
+				if(chain_flashover(xx,yy))tmp=true;
+			}
+		}
+	}
+
+	if(tmp){
+		clear_message();
+		add_message("フラッシュオーバー！煙が引火して炎に変わる！");	
+		draw_board();
+	}else{hazmat_check();}
+}
+
+function chain_flashover(xx,yy){
+	var xm;var ym;
+
+	if(board.fire[xx][yy]!=1)return false;
+	//console.log("地点["+xx+","+yy+"]のフラッシュ判定");
+	for(var i=0;i<4;i++){
+		xm = Math.round(xx+Math.sin(i*Math.PI/2));
+		ym = Math.round(yy+Math.cos(i*Math.PI/2));
+		if(xx == xm){tmp = board.wall_tate[Math.min(xx,xm)][Math.min(yy,ym)];}
+		if(yy == ym){tmp = board.wall_yoko[Math.min(xx,xm)][Math.min(yy,ym)];}
+		if(board.fire[xm][ym]==2 && tmp < 2){
+			board.fire[xx][yy]=2;
+			//console.log("隣に火アリ["+xm+","+ym+"]");
+		}
+	}
+	if(board.fire[xx][yy]==2){
+		for(var i=0;i<4;i++){
+			xm = Math.round(xx+Math.sin(i*Math.PI/2));
+			ym = Math.round(yy+Math.cos(i*Math.PI/2));
+			if(xx == xm){tmp = board.wall_tate[Math.min(xx,xm)][Math.min(yy,ym)];}
+			if(yy == ym){tmp = board.wall_yoko[Math.min(xx,xm)][Math.min(yy,ym)];}
+			if(board.fire[xm][ym]==1 && tmp < 2){chain_flashover(xm,ym);}
+		}
+		return true;
+	}
+	return false;
+}
+
+function hazmat_check(){
+
+	game.scene = 4;
+	game.phase = 3;
+	if(game.difficulty<0){dead_check();return;}
+
+	for(var i=0;i<hazmat.length;i++){
+		if(hazmat[i].status == 1 && board.fire[hazmat[i].x][hazmat[i].y] == 2){
+			explode(hazmat[i].x,hazmat[i].y);
+			hazmat[i].status = 0;
+			add_hotspot(hazmat[i].x,hazmat[i].y);
+			clear_message();
+			add_message("危険物に引火して爆発が起きる！");
+			draw_board();
+			game.phase = 1;
+		}
+	}
+
+	if(game.phase == 3)hotspot_check();
+}
+
+function hotspot_check(){
+	game.scene = 4;
+	game.phase = 4;
+
+	if(board.hotspot[game.firespot_x][game.firespot_y] == 1){
+		clear_message();
+		game.hotspot_flag = true;
+		add_message("高温点に炎が拡大したので再び炎の拡大が起きる！");
+		roll();
+		expand_fire();
+	}else{
+		if(game.hotspot_flag){
+			clear_message();
+			add_hotspot(game.firespot_x,game.firespot_y);
+			draw_board();
+			
+		}else{
+			dead_check();
+		}
+	}
+}
+
+function continue_check(a){
+
+	if(a==0){
+		clear_message();
+		if(game.dead == 0){add_message("完全救出を目指して続行！");}
+		else{add_message("残りの要救助者を救うべく続行！");}
+		choose_action();
+	}
+	if(a==2){enter_start_menu();}
+
+}
+
+//---------------------
+
+
+function collapse_check(){
+	if(game.damage<=0){
+		game.scene = 5;
+		game.phase = 0;
+		add_message("建物が倒壊した。");
+		if(game.alive<7){add_message("要救助者を助け出せなかった。我々の敗北だ。");}
+		else if(game.alive<10){add_message("いくらかの犠牲は出たが、多くの人々を救った事に賞賛が寄せられる。");}
+		else{add_message("しかし、建物にいるはずの人間はすべて救い出した！我々の勝利だ！");add_message("（でもなんで？その時点でゲーム終わってるはずなのに...）");}
+		draw_board();
+		return true;
+	}
+	return false
+}
+
+function deal_damage(){//建物にダメージが入るたびに何か処理をするときのために関数化してるけど役に立つ日が来るのかは不明。
+	game.damage--;
+}
+
+function dead_check(){
+	var xx;
+	var yy;
+	var tmp = true;
+	if(collapse_check()){return false;}
+	clear_message();
+
+	for(var i=0;i<poi.length;i++){
+		if(board.fire[poi[i].x][poi[i].y]<2)continue;
+		if(poi[i].status == 1){
+			flip_poi(i);
+			if(poi[i].status ==0){
+				game.scene = 4;
+				game.phase = 4;
+				return false;
+			}
+		}
+
+		if(poi[i].status > 1){
+			game.scene = 5;
+			game.phase = 2;
+			add_message("地点["+poi[i].x+","+poi[i].y+"にいた"+poi_name[poi[i].status]+"はが炎に巻かれて亡くなった。");
+			poi[i].status = 0;
+			game.dead++;
+			if(game.dead>=4){
+				game.scene = 5;
+				game.phase = 0;
+				add_message("あまりにも多くの犠牲が出てしまった。我々の敗北だ。");
+				return false;
+			}else{
+				game.scene = 4;
+				game.phase = 4;
+				return false;
+			}
+		}
+	}
+
+	for(var i=0;i<player.length;i++){
+		if(board.fire[player[i].x][player[i].y]<2)continue;
+		add_message("地点["+player[i].x+","+player[i].y+"]にいたプレイヤー"+(i+1)+"はが炎に巻かれて避難した。");
+		var mr = board.tate + board.yoko;
+		var sss = [];
+		reentry_pos = [];
+		release(i);
+
+		if(game.difficulty<0){
+			for(var j=0;j<board.ambulance_place.length;j++){
+			for(var k=0;k<board.ambulance_place[j].length;k++){
+				xx = board.ambulance_place[j][k][0];
+				yy = board.ambulance_place[j][k][1];
+				var r = Math.abs(xx-player[i].x) + Math.abs(yy-player[i].y);
+				if(r==mr){
+					sss.push("地点["+xx+","+yy+"]");
+					reentry_pos.push(xx,yy);
+				}
+				if(r<mr){
+					mr=r;
+					reentry_pos=[[xx,yy]];
+					sss = ["地点["+xx+","+yy+"]"];
+				}
+			}
+			}
+			
+		}else{
+			var j = board.ambulance_pos;
+			for(var k=0;k<board.ambulance_place[j].length;k++){
+				reentry_pos.push([board.ambulance_place[j][k][0],board.ambulance_place[j][k][1]]);
+				sss.push("地点["+board.ambulance_place[j][k][0]+","+board.ambulance_place[j][k][1]+"]");
+			}
+		}
+
+		if(sss.length>1){
+			game.scene = 5;
+			game.phase = 1;
+
+			draw_board();
+			for(var i=0;i<reentry_pos.length;i++){
+				draw_circle(reentry_pos[i][0],reentry_pos[i][1]);
+			}
+			show_option(sss);
+			add_message("どこからリスタートしますか？");
+			return true;
+		}else{
+			add_message("地点["+reentry_pos[0][0]+","+reentry_pos[0][1]+"]から再突入する。");
+			player[i].x = reentry_pos[0][0];
+			player[i].y = reentry_pos[0][1];
+			board.fire[reentry_pos[0][0]][reentry_pos[0][1]]=0;
+			game.scene=4;
+			game.phase=4;
+			draw_board();
+			return true;
+		}
+	}
+
+	refill_poi();
+}
+
+function reentry(xx,yy=-1){
+
+	var a = xx;
+
+	if(yy>=0){
+		var i;
+		for(i=0;i<reentry_pos.length;i++){
+			if(xx==reentry_pos[i][0] && yy==reentry_pos[i][1]){
+				a = i;
+				break;
+			}
+		}
+		if(i==reentry_pos.length){return;}
+	}
+
+	for(var i=0;i<player.length;i++){
+		if(board.fire[player[i].x][player[i].y]<2)continue;
+
+		xx = reentry_pos[a][0];
+		yy = reentry_pos[a][1];
+
+		clear_message();
+		add_message("地点["+xx+","+yy+"]から再突入する。");
+		show_option(["次へ"]);
+		draw_board();
+		player[i].x=xx;
+		player[i].y=yy;
+		board.fire[xx][yy]=0;
+		draw_board();
+		break;
+	}
+	game.scene=4;game.phase=4;
+}
+
+function flip_poi(a){
+	if(poi[a].status==1){
+		if(Math.random()*(game.victim_rest+game.false_rest)<game.false_rest){
+			game.false_rest--;
+			poi[a].status = 0;
+			add_message("地点["+poi[a].x+","+poi[a].y+"]の不審箇所は誤報だった！");
+		}else{
+			game.victim_rest--;
+			poi[a].status = 2;
+			add_message("地点["+poi[a].x+","+poi[a].y+"]の不審箇所に要救助者がいた！");
+		}
+		draw_board();
+	}
+}
+
+function refill_poi(){
+	
+	var poi_num = 0;
+	var tmp = true;
+
+	game.scene = 5;
+	game.phase = 3;
+	
+	extinguish_around();
+
+	for(var i = 0;i<poi.length;i++){
+		if(poi[i].status==0 && game.poi_rest>0){
+
+			poi_spawn();
+			poi[i].x = dice8;
+			poi[i].y = dice6;
+			poi[i].status = 1;
+			game.poi_rest--;
+			board.fire[dice8][dice6] = 0;
+			add_message("地点["+poi[i].x+","+poi[i].y+"]の不審箇所が判明した。");
+			for(var j=0;j<player.length;j++){if(player[j].x == dice8 && player[j].y == dice6){flip_poi(i);}}
+			draw_board();
+			tmp = false;
+		}
+	}
+
+	save_game();
+	if(tmp == true){pass_turn();}
+}
+
+
+function poi_spawn(){
+	var wander = true;
+	var round = false;
+
+	roll();
+
+	while(wander){
+		console.log("地点["+dice8+"]["+dice6+"]のpoi_spawnチェック");
+		wander = false;
+		if(game.difficulty>=0){
+			if(board.fire[dice8][dice6]>0){wander = true;console.log("火がある");};
+			for(var i=0;i<player.length;i++){if(player[i].x == dice8 && player[i].y == dice6){wander = true;console.log("プレイヤー"+(i+1)+"がいる");}}
+			for(var i=0;i<poi.length;i++){if(poi[i].x == dice8 && poi[i].y == dice6 && poi[i].status>0){wander = true;console.log(poi_name[poi[i].status]+"がいる");}}
+		}else{
+			for(var i=0;i<poi.length;i++){if(poi[i].x == dice8 && poi[i].y == dice6 && poi[i].status>0){wander = true;console.log(poi_name[poi[i].status]+"がいる");}}
+		}
+		if(wander){
+			var xx =dice8+ (board.poi_move[dice8][dice6]-1)%3-1;
+			var yy =dice6+ 1-Math.floor((board.poi_move[dice8][dice6]-1)/3);
+			dice8= xx;dice6 =yy;
+			if(round == true && board.poi_end.x == xx &&board.poi_end.y == yy){
+				roll();
+				round = false;
+			}else if(board.poi_end.x == xx &&board.poi_end.y == yy){
+				round = true;
+			}
+			if(game.difficulty<0)roll();
+		}
+	}
+}
+
+
+function pass_turn(){
+	game.turn = (game.turn + 1) % player.length;
+	take_my_turn();
+}
+
+//---------------------------------------------
+
+function is_payable(act,t1=-1,t2=-1,t3=-1){
+
+	var hav;
+	var cos = action_cost(act,t1,t2,t3);
+
+	if(is_sap_usable(act,t1=-1,t2=-1,t3=-1)){hav = game.ap+game.sap;}
+	else{hav = game.ap;}
+
+	return hav>=cos;
+}
+
+function pay_cost(act,t1=-1,t2=-1,t3=-1){
+
+	var psp;
+	var cos = action_cost(act,t1,t2,t3);
+
+	if(is_payable(act,t1,t2,t3)==false){console.log("払おうにもはらえぬ！ちゃんとコストを確かめる処理をはさめ! "+act+","+t1+","+t2+","+t3);return;}
+
+	if(is_sap_usable(act,t1=-1,t2=-1,t3=-1)){
+		if(game.sap > cos){game.sap = game.sap - cos;}
+		else{game.ap=game.ap+game.sap-cos;game.sap=0;}
+	}else{game.ap = game.ap-cos;}
+
+}
+
+function action_cost(act,t1=-1,t2=-1,t3=-1){
+	if(act==1){//歩く。t1に対象プレイヤー
+		for(var i=0;i<player[t1].grab.length;i++){
+			if(player[t1].grab[i][0]==2 ||(player[t1].grab[i][0]==1 && player[t1].grab[i][1]<3))return 2;
+		}
+		return 1;
+
+	}else if(act==2){//扉開閉。t1に壁の種類
+		if(player[game.turn].role=="rescue" || t1<=2){return 1;}
+		else{return 2;}
+	}else if(act==3){//消火。にがてなキャラは2,それ以外1。
+		if(role[player[game.turn].role].dis_ex){return 2;}
+		else{return 1;}
+	}else if(act==4){//物を掴むのは正確にはアクションではない。
+		return 0;
+	}else if(act==5){//車両の運転は一律2。
+		return 2;
+	}else if(act==6){//放水は運転操作技師2。それ以外は4。
+		if(player[game.turn].role=="driver"){return 2;}
+		else{return 4;}
+	}else if(act==7){//ロールチェンジは一律2。
+		return 2;
+	}else if(act==8){//特別アクションはそれぞれのロールに聞く。t1にアクション、t2,t3に渡す引数。
+		if(t1>=0){
+			return role[player[game.turn].role].ex_action[t1].cost(t2,t3);
+		}else{
+			console.log("ロール専用アクションのコストを聞くならどのアクションか指定してくれ(多分0番なんだろうけど。)");
+			return 9999;
+		}
+	}else{
+		console.log("なんかcostの関数にact="+act+"が入れられたぞ！？");
+	}
+}
+
+function is_sap_usable(act,t1=-1,t2=-1,t3=-1){
+
+
+	if(act==1){
+		if(player[game.turn].role == "captain" && game.phase == 8){return true;}
+		if(player[game.turn].role == "rescue"){return true;}
+		else{return false;}
+	}else if(act==2){//扉開閉。t1に壁の種類
+		hav = game.ap;
+	}else if(act==3){//消火。全部1。
+		if(player[game.turn].role == "cafs"){return true;}
+		else{return false;}
+	}else if(act==4){//物を掴むのは正確にはアクションではない。
+		return false;
+	}else if(act==5){//車両の運転は一律2。
+		return false;
+	}else if(act==6){//放水は運転操作技師2。それ以外は4。
+		return false;
+	}else if(act==7){//ロールチェンジは一律2。
+		return false;
+	}else if(act==8){//特別アクションはそれぞれのロールに聞く予定。でもとりあえず使えるでしょ？特殊APと特殊アクションどっちも持ってるのは今のとこ消防指令しかいない。そして使える。
+		return true;
+	}else{
+		console.log("なんかis_sap_usableの関数にact="+act+"が入れられたぞ！？");
+		return false;
+	}
+}
+
+function add_hotspot(xx,yy){//高温点追加。残ってなきゃやらない。
+	if(board.hotspot[xx][yy]==0 && game.hotspot_remain>0 ){
+		board.hotspot[xx][yy]=1;
+		game.hotspot_remain--;
+		add_message("地点["+dice8+","+dice6+"]に高温点の追加！");
+		draw_board();
+	}else if(board.hotspot[xx][yy]==0 && game.hotspot_remain<=0 ){
+		add_message("地点["+dice8+","+dice6+"]に高温点の追加…するとこだったけどもう高温点がない。");
+		draw_board();
+
+	}
+}
+
+function extinguish_around(){
+	for(var x=0;x<board.yoko;x++){
+		board.fire[x][0]=0;
+		board.fire[x][board.tate-1]=0;
+	}
+	for(var y=0;y<board.tate;y++){
+		board.fire[0][y]=0;
+		board.fire[board.yoko-1][y]=0;
+	}
+}
+function explode(xx,yy){//爆発
+	var xm;
+	var ym;
+	var tmp;
+	console.log("地点["+xx+","+yy+"]で爆発！");
+	for(var i=0;i<4;i++){
+		xm = Math.round(xx+Math.sin(i*Math.PI/2));
+		ym = Math.round(yy+Math.cos(i*Math.PI/2));
+		tmp = brow(xx,yy,xm,ym);
+		if(tmp){
+			if(board.fire[xm][ym]<2){board.fire[xm][ym]=2;}
+			else if(board.fire[xm][ym]==2){shockwave(xm,ym,i);}
+		}
+	}
+}
+
+function shockwave(xx,yy,i){//ショックウェーブ
+	var xm;
+	var ym;
+	xm = Math.round(xx+Math.sin(i*Math.PI/2));
+	ym = Math.round(yy+Math.cos(i*Math.PI/2));
+
+	tmp = brow(xx,yy,xm,ym);
+	if(tmp){
+		if(board.fire[xm][ym]<2){board.fire[xm][ym]=2;}
+		shockwave(xm,ym,i);
+	}
+}
+function opendoor(xx,yy,xm,ym){//消防指令用にドアの開け閉めだけの関数を作った
+
+	if(xm != xx && ym != yy)return false;
+	if(xm == xx && Math.abs(ym-yy) != 1) return false;
+	if(ym == yy && Math.abs(xm-xx) != 1) return false;
+
+	var wall;
+	if(xm==xx){wall = board.wall_tate;}
+	if(ym==yy){wall = board.wall_yoko;}
+
+	xx = Math.min(xx,xm);
+	yy = Math.min(yy,ym);
+
+	if(wall[xx][yy]<1 ||wall[xx][yy]>2 )return false;
+
+	if(game.ap < action_cost(1,wall[xx][yy])){
+		add_message("コストが足らない。");
+		return false;
+	}
+		
+	if(wall[xx][yy]==2){
+		add_message("扉を開けた。");
+		wall[xx][yy] = wall_next_status(wall[xx][yy]);
+	}else if(wall[xx][yy]==1){
+		add_message("扉を閉めた。");
+		wall[xx][yy] = wall_next_status(wall[xx][yy]);
+	}
+
+	return true;
+}
+
+function brow(xx,yy,xm,ym){//爆発やショックウェーブの壁殴り
+	var xm;
+	var ym;
+
+	if(is_in_board(xm,ym)==false){return false;}
+
+	if(xx==xm){wall = board.wall_tate;}
+	if(yy==ym){wall = board.wall_yoko;}
+	
+	xm=Math.min(xx,xm);ym=Math.min(yy,ym);
+
+	if(wall[xm][ym] == 4){
+		deal_damage();
+		wall[xm][ym] = 3;
+		return false;
+	}else if(wall[xm][ym] == 3){
+		deal_damage();
+		wall[xm][ym] = 0;
+		return false;
+	}else if(wall[xm][ym] == 2){
+		wall[xm][ym] = 0;
+		return false;
+	}else{
+		wall[xm][ym] = 0;
+		return true;
+	}
+
+
+}
+
+
+//------------------------------------------------------------
+//--スタートメニュー関連--------------------------------------
+//------------------------------------------------------------
+
+function enter_start_menu(){
+
+	game.scene=0;
+	game.phase=0;
+
+	init_map("first_easy");
+
+	clear_message();
+	add_message("モードを選択してください。");
+	show_option(["ゲームスタート","簡易ルールでプレイ","　","ロード","チュートリアル"]);
+
+	draw_board();
+}
+
+function branch_start_menu(a){
+	if(a==0){game.difficulty=0;choose_player_nbr();}
+	if(a==1){game.difficulty=-1;choose_player_nbr();}
+	if(a==3){check_load_data();}//チュートリアルへ
+	if(a==4){tutorial_menu();}//チュートリアルへ
+}
+
+function check_load_data(){
+	g = localStorage.getItem("scatolo's_rescue_game");
+	if(g==null){
+		add_message("セーブデータが無い！");
+		return false;
+	}
+
+	og = JSON.parse(g);
+	vvv = game.version;
+	if(Math.floor(og.version)!=Math.floor(vvv)){
+		add_message("セーブデータのバージョンが違ってロードできない！");
+		return false;
+	}
+	
+	board_json = localStorage.getItem("scatolo's_rescue_board");
+	game_json = localStorage.getItem("scatolo's_rescue_game");
+	player_json = localStorage.getItem("scatolo's_rescue_player");
+	poi_json = localStorage.getItem("scatolo's_rescue_poi");
+	hazmat_json = localStorage.getItem("scatolo's_rescue_hazmat");
+
+	board = JSON.parse(board_json);
+	game = JSON.parse(game_json);
+	player = JSON.parse(player_json);
+	poi = JSON.parse(poi_json);
+	hazmat = JSON.parse(hazmat_json);
+
+	game.version = vvv;
+	game.scene = 0;
+	game.phase = 6;
+
+	clear_message();
+	add_message("このゲームをロードしますか？");
+
+	draw_board();
+	show_option(["再開する","　","メニューに戻る"]);
+}
+
+function confirm_load_data(a){
+	if(a==0){load_game();}
+	else{enter_start_menu();}
+}
+
+function choose_player_nbr(){
+
+	game.scene=0;
+	game.phase=1;
+
+	clear_message();
+	add_message("プレイヤー人数を選択してください。");
+	show_option(["2人","3人","4人","5人","6人","　","もどる"]);
+
+}
+
+function choose_difficulty(a){
+
+	if(0<=a && a<=4){nbr_player=a+2;}
+	else if(a==6){enter_start_menu();return false;}
+	else {return false;}
+
+	if(game.difficulty<0){init_map("first_easy");confirm_easygame();return;}
+	game.scene=0;
+	game.phase=2;
+
+	clear_message();
+	add_message("難易度を選択してください。");
+	sss=[];
+	for(var i=0;i<difficulty_name.length;i++)
+		sss.push(difficulty_name[i]);
+	sss.push("　");
+	sss.push("もどる");
+	show_option(sss);
+
+	
+}
+
+function choose_map(a){
+
+	if( a<difficulty_name.length){game.difficulty=a;}
+	else if(a==difficulty_name.length+1){choose_player_nbr();return false;}
+	else {return false;}
+
+	game.scene=0;
+	game.phase=3;
+
+	clear_message();
+	add_message("マップを選択してください。");
+
+	var sss=[];
+	map_num=0;
+	Object.keys(map).forEach(function(key){
+		sss.push(map[key].name);
+	});
+	sss.push("　");
+	sss.push("もどる");
+	show_option(sss);
+}
+
+function confirm_map(a){
+
+	Object.keys(map).forEach(function(key){
+		a--;
+		if(a==-1){
+			init_map(key);
+		}
+	});
+
+	if(a==0){return false;}
+	if(a==1){choose_difficulty(nbr_player-2);return false;}
+
+	draw_board();
+	game.scene=0;
+	game.phase=4;
+
+	clear_message();
+	add_message("プレイヤー:"+nbr_player+"人　難易度:"+difficulty_name[game.difficulty]+"　マップは上のとおり");
+	add_message("でゲームを開始しますか？");
+
+	show_option(["これで始める","　","人数を選び直す","難易度を選び直す","マップを選び直す","　","メニューに戻る"]);
+}
+function confirm_easygame(){
+
+	draw_board();
+	game.scene=0;
+	game.phase=4;
+
+	clear_message();
+	add_message("プレイヤー:"+nbr_player+"人　簡易ルールでゲームを開始しますか？");
+
+	show_option(["これで始める","　","人数を選び直す","　","　","　","メニューに戻る"]);
+}
+
+function tutorial_menu(){
+	game.scene=0;
+	game.phase=5;
+
+	clear_message();
+	add_message("どの説明を見ますか？");
+
+	show_option(["通常ルールの説明","簡易ルールの説明","ロールの説明","　","メニューに戻る"]);
+}
+
+function choose_tutorial(a){
+	if(a==0){game.phase=0;tutorial();}
+	if(a==1){game.phase=100;tutorial();}
+	if(a==2){game.phase=200;tutorial();}
+	if(a==4){enter_start_menu();}
+}
+
+
+function final_confirm_to_start(a){
+
+	if(a==0){setup_game();}
+	if(a==2){choose_player_nbr();}
+	if(a==3 && game.difficulty>=0){choose_difficulty(nbr_player-2);}
+	if(a==4 && game.difficulty>=0){choose_map(game.difficulty);}
+	if(a==6){enter_start_menu();}
+
+}
+
+//---------------------------------------------------------------
+//--チュートリアル-----------------------------------------------
+//---------------------------------------------------------------
+function phase_change(s,p){
+	game.scene = s;
+	game.phase = p;
+}
+
+function tutorial(){
+	game.scene = 1;
+	tmp_s = game.scene;
+	tmp_p = game.phase;
+
+	if(game.phase == 0){
+		game.difficulty = 0;
+		init_map("first_easy");
+		player=[{role:"generalist",x:-1,y:-1,grab:[],color:p_color[0],chara:"p1",ap:0}];
+		player.push({role:"captain",x:-1,y:-1,grab:[],color:p_color[1],chara:"p2",ap:0});
+		player.push({role:"rescue",x:-1,y:-1,grab:[],color:p_color[2],chara:"p3",ap:0});
+		game.damage=24;
+		game.alive = 0;
+		game.dead = 0;
+		game.poi_rest=15;
+		game.turn = 0;
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		show_option(["次へ"]);
+		add_message(" - チュートリアル (通常ルール) - ");
+		add_message("　");
+		add_message("「RESCUE」は各プレイヤーが消防士となって火災を消火しつつ、");
+		add_message("24ポイントある建物の耐久値がなくなる前に");
+		add_message("要救助者を発見し、救出していくことを目指すゲームです。");
+
+		game.phase++;
+	}else if(game.phase==1){
+
+		board.fire[4][3] = 2;
+		board.hotspot[4][3] = 1;
+		explode(4,3);
+
+		board.fire[1][2] = 2;
+		board.hotspot[1][2] = 1;
+		explode(1,2);
+
+		board.fire[8][1] = 2;
+		board.hotspot[8][1] = 1;
+		explode(8,1);
+
+		hazmat = [];
+		hazmat.push({x:1,y:4,status:1,grab:0,who:0});
+		hazmat.push({x:3,y:5,status:1,grab:0,who:0});
+		hazmat.push({x:8,y:6,status:1,grab:0,who:0});
+		hazmat.push({x:5,y:1,status:1,grab:0,who:0});
+
+		poi = [];
+		poi.push({x:2,y:4,status:1,grab:0,who:0});game.poi_rest--;
+		poi.push({x:7,y:5,status:1,grab:0,who:0});game.poi_rest--;
+		poi.push({x:6,y:1,status:1,grab:0,who:0});game.poi_rest--;
+
+		show_option(["次へ"]);
+
+		draw_board();
+		clear_message();
+		add_message("ゲームの開始時に爆発(詳細は後述します。)と高温点("+emoji["hotspot"].chara+")が振りまかれ、");
+		add_message("不審箇所(<span style='background-color:"+poi_color+"'>"+emoji["poi"].chara+"</span>)と危険物(<span style='background-color:"+hazmat_color+"'>"+emoji["hazmat"].chara+"</span>)が配置されます。");
+		add_message("爆発は盤面中央付近と追加で２カ所（英雄レベルは３カ所）で発生します。");
+		add_message("　");
+		game.phase++;
+
+	}else if(game.phase==2){
+
+		clear_message();
+
+		show_role(3);
+		add_message("その盤面の状況を見て各プレイヤーでロールを選択してください。");
+		add_message("　");
+		add_message("複数のプレイヤーで同じロールになることは出来ませんので、");
+		add_message("重複しないよう選択してください。");
+		game.phase++;
+
+	}else if(game.phase==3){
+
+		board.hotspot[5][5] = 1;
+		board.hotspot[4][1] = 1;
+		draw_board();
+		clear_message();
+
+		show_option(["次へ"]);
+		add_message("その後、追加の高温点が振りまかれます。");
+		add_message("難易度と人数に応じて高温点の数が変わります。");
+		add_message("一般隊員:+0　ベテラン以上:+3 、 3人:+2　4人以上:+3");
+		add_message("これと別に、ゲーム中に追加される高温点が６つ用意されます");
+		add_message("（英雄レベルは12個用意されます。)");
+		game.phase++;
+
+	}else if(game.phase==4){
+
+		clear_message();
+
+		show_option(["次へ"]);
+		add_message("それを見て消防車、救急車、プレイヤーの初期位置を決めます。");
+		add_message("消防車は建物外周の緑色（<span style='background-color:"+fireengine_color+"'>　</span>）の位置をクリックし、");
+		add_message("救急車は建物外周の黄色（<span style='background-color:"+ambulance_color+"'>　</span>）の位置をクリックし、");
+		add_message("プレイヤーは建物外周のいずれかの位置をクリックして");
+		add_message("初期位置を決定します。");
+		game.phase++;
+
+	}else if(game.phase==5){
+
+		clear_message();
+
+		board.fireengine_pos = 3;
+		board.ambulance_pos = 0;
+		player[0].x = 6;player[0].y=0;
+		player[1].x = 0;player[1].y=2;
+		player[2].x = 0;player[2].y=3;
+		draw_board();
+
+		show_option(["次へ"]);
+		add_message("これでセットアップが完了しました。プレイヤー1から順にゲームが始まります。");
+		game.phase++;
+
+	}else if(game.phase==6){
+
+		take_my_turn();
+		phase_change(tmp_s,tmp_p);
+		clear_message();
+		add_message("ターンが来たらロールごとに決まったアクションポイント(AP、"+emoji["ap"].chara+"で表示)を");
+		add_message("使用することが出来ます。APが残っている限り、好きなアクションを好きな順で");
+		add_message("何度も実行することが出来ます。");
+		add_message("未使用のAPは4APまで次の自分のターンに持ち越すことが出来ます。");
+		game.phase++;
+
+	}else if(game.phase==7){
+
+		card_td[0].style="background-color:#f0e0d0";
+		clear_message();
+		add_message("移動:1AP ／ 運ぶ:2AP");
+		add_message("隣接マスを指定してそちらの方向に移動します。");
+		add_message("何かをつかんだ状態であれば、移動と同時に運びます。");
+		add_message("何もつかんでいなければ炎("+emoji["fire"].chara+")の中にも移動できます。（2AP）");
+		add_message("ただし、炎の上でターンを終了することは出来ません。");
+
+		game.phase++;
+
+	}else if(game.phase==8){
+
+		player_move(0,6,1);
+		poi[2].status=2;
+		phase_change(tmp_s,tmp_p);
+		draw_board();
+		clear_message();
+		add_message("不審箇所と同じマスにいる場合、要救助者の存否が判明します。");
+		add_message("（不審箇所の中に要救助者が10、誤報が5あります。）");
+		add_message("　");
+		add_message("要救助者の存在が判明したら"+emoji["victim"].chara+"で表示されます。");
+		game.phase++;
+
+
+	}else if(game.phase==9){
+
+		card_td[1].style="background-color:#f0e0d0";
+		clear_message();
+		add_message("扉の開閉:1AP ／ 壁を壊す:2AP("+role["rescue"].name+"は1AP)");
+		add_message("隣接マスを指定すると、間にある扉の開閉や壁の破壊を行います。");
+		add_message("無傷の壁（実線）を壊すと損傷した壁（破線）になり、");
+		add_message("損傷した壁を壊すと開通し、通れるようになります。");
+		add_message("無傷→損傷→開通の変化ごとに建物の耐久値（"+emoji["damage"].chara+"）が減ります。");
+		game.phase++;
+
+	}else if(game.phase==10){
+
+		//chop(5,1);
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("オレンジ色の扉を開けることにより通れるようになります。");
+		add_message("閉まっていれば後述する爆発やショックウェーブを");
+		add_message("止める事ができます。状況に応じて開閉しましょう。");
+		add_message("　");
+		add_message("今回は壁を壊す必要が無いので割愛。");
+		game.phase++;
+
+	}else if(game.phase==11){
+
+		clear_message();
+		card_td[2].style="background-color:#f0e0d0";
+		add_message("消火:1AP");
+		add_message("自身がいるマスか隣接マスを指定すると、");
+		add_message("そこに煙("+emoji["smoke"].chara+")がある場合は除去し、");
+		add_message("炎("+emoji["fire"].chara+")がある場合は煙("+emoji["smoke"].chara+")に変えます。");
+		game.phase++;
+
+	}else if(game.phase==12){
+
+		extinguish(7,1);
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("炎を除去するにはこのアクションを２回行う必要があります。");
+		add_message("隣のマスと壁や閉まった扉で阻まれている場合は消火できません。");
+		add_message("　");
+		add_message("一部のロールは消火に2APかかります。");
+		game.phase=12.5;
+
+
+	}else if(game.phase==12.5){
+
+		extinguish(7,1);
+
+		game.scene = 1;game.phase=13;
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("消火アクションを2回行って完全に消火しました。");
+
+	}else if(game.phase==13){
+
+
+		game.scene = 1;game.phase=13.5;
+		card_td[3].style="background-color:#f0e0d0";
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("つかむ／手放す:0AP");
+		add_message("自分のマスに要救助者や危険物などがあれば");
+		add_message("それをつかむことが出来ます。");
+		add_message("つかむ事で移動の際にそれを運ぶことができるようになります。");
+		add_message("各プレイヤー１つまで何かをつかむ事ができます。");
+
+	}else if(game.phase==13.5){
+
+
+		grab(0,0);
+		phase_change(tmp_s,tmp_p);
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("何かをつかんでいる状態だと");
+		add_message("「移動」アクションが「運ぶ」アクションに変わります。");
+
+
+	}else if(game.phase==14){
+
+		player_move(0,6,0);
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("<b>要救助者</b>を<b>救急車まで運ぶ</b>ことで救出できます。");
+		add_message("<b>危険物</b>は<b>建物の外周まで運ぶ</b>ことで処分できます。");
+		add_message("　");
+		add_message("要救助者を救出したら生還者("+emoji["alive"].chara+")が1増えます。");
+		add_message("７人以上救出するれば勝利となります。");
+		game.phase++;
+
+	}else if(game.phase==15){
+
+
+		card_td[9].style="background-color:#f0e0d0";
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ターン中の行動がすべて終わったら");
+		add_message("「ターン終了」をクリックして終了します。");
+		add_message("　");
+		add_message("この時点で未使用のAP"+emoji["ap"].chara+"が持ち越されますが、");
+		add_message("ロールによって付与される特殊AP"+emoji["sap"].chara+"はなくなります。");
+
+		game.phase++;
+
+	}else if(game.phase==16){
+
+		show_option(["次へ"]);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ターン終了後は「炎の拡大」と「不審箇所の補充」を行い");
+		add_message("次のプレイヤーにターンが渡ります。");
+
+		game.phase++;
+
+	}else if(game.phase==17){
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」ではランダムな地点に煙"+emoji["smoke"].chara+"が発生します。");
+		add_message("既に煙"+emoji["smoke"].chara+"がある場合には炎"+emoji["fire"].chara+"が発生します。");
+		add_message("既に炎"+emoji["fire"].chara+"があった場合は「爆発」が起きます。");
+		add_message("高温点"+emoji["hotspot"].chara+"のある地点に当たった場合、");
+		add_message("一連の処理の後に再度「炎の拡大」を行い、高温点を追加します。");
+
+		game.phase++;
+	}else if(game.phase==18){
+		board.fire[7][2]=1;
+		show_option(["次へ"]);
+		draw_board();
+		draw_circle(7,2);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("今回は地点[7,2]が選ばれ煙が発生しただけで済みました。");
+		add_message("…とは行きません。");
+		add_message("「炎の拡大」では煙への引火と危険物の爆発も起きるのです。");
+
+		game.phase++;
+
+	}else if(game.phase==19){
+		board.fire[7][2]=2;
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」の最中に炎"+emoji["fire"].chara+"と隣接した煙"+emoji["smoke"].chara+"は");
+		add_message("引火して炎"+emoji["fire"].chara+"に変わります。こわぃょ～");
+		add_message("　");
+		add_message("壁や閉じた扉で阻まれている場合は引火しません。");
+
+		game.phase++;
+
+	}else if(game.phase==20){
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」の最中に炎"+emoji["fire"].chara+"のマスに危険物<span style='background-color:"+hazmat_color+"'>"+emoji["hazmat"].chara+"</span>がある場合、");
+		add_message("「爆発」が発生し、そこに高温点が置かれます。");
+		add_message("　");
+		add_message("今回は危険物に関しては大丈夫ですね。");
+
+		game.phase++;
+
+	}else if(game.phase==21){
+
+		poi[2].x=6;
+		poi[2].y=2;
+		poi[2].status=1;
+		draw_board();
+		draw_circle(6,2);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」の処理が完了したら「不審箇所の補充」を行います。");
+		add_message("　");
+		add_message("15個の不審箇所を使い切っていない限り、3つになるまで置きます。");
+		add_message("煙や炎やプレイヤーがいない地点にランダムに補充されます。");
+		add_message("（なるべく中央よりに置かれるように処理しています。）");
+
+		game.phase++;
+
+	}else if(game.phase==22){
+
+		pass_turn();
+		phase_change(tmp_s,tmp_p);
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("次のプレイヤーにターンを渡します。");
+		add_message("　");
+		add_message("残りのアクションと「炎の拡大」中に起きる「爆発」について");
+		add_message("実際の動きを交えて説明します。");
+
+		game.phase++;
+	}else if(game.phase==23){
+
+		card_td[6].style="background-color:#f0e0d0";
+
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ロールの変更:2AP");
+		add_message("ターンの最初に消防車の上にいるとき、ロールの変更を行えます。");
+		add_message("APと特殊APは変更後のロールの初期値となり");
+		add_message("そこからこのアクション分の2APが引かれます。");
+		add_message("繰り越したAPも引き継がれます。");
+
+		game.phase++;
+	}else if(game.phase==24){
+
+		show_role(1);
+		
+		clear_message();
+		add_message("他のプレイヤーと重複しないロールを選び");
+		add_message("その職業になります。");
+		add_message("　");
+		add_message("今回は"+role["driver"].name+"に変更します。");
+
+		game.phase++;
+	}else if(game.phase==25){
+
+		player[1].role="driver";
+		game.ap=2;
+		choose_action();
+		game.scene = 1;game.phase=25;
+		context.fillStyle="rgba(255,128,0,30%)";
+		context.fillRect(masu_haji(1),masu_haji(1),masu_haji(4),masu_haji(3));
+		card_td[5].style="background-color:#f0e0d0";
+		
+		clear_message();
+		add_message("消防車の放水:4AP("+role["driver"].name+"は2AP)");
+		add_message("建物内の上下左右で4分割した4つののエリアのうち、");
+		add_message("消防車が接するエリアからランダムに地点を抽選し、");
+		add_message("その地点とそこに隣接する地点にある炎や煙を除去します。");
+		add_message("具体例を示すと、オレンジの範囲から抽選されます。");
+
+		game.phase++;
+	}else if(game.phase==26){
+
+		clear_message();
+		add_message("ただしこのアクションを行うには二つ条件があります。");
+		add_message("・プレイヤーが消防車のあるマスにいること");
+		add_message("・消防車の放水エリアに他のプレイヤーがいないこと");
+		add_message("　");
+		add_message("この２つを満たすとき消防車の放水が可能です。");
+
+		game.phase++;
+	}else if(game.phase==27){
+
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		draw_circle(4,2);
+		
+		clear_message();
+		add_message("今回は地点[4,2]が選ばれました。");
+		add_message("その地点と上下左右の地点のうち");
+		add_message("壁や閉じた扉で阻まれていない地点の炎や煙が除去されます。");
+		add_message("今回の地点は下と壁で阻まれているので何も消えません。");
+		add_message("…しかし、"+role["driver"].name+"は再抽選を行うことが出来ます。");
+
+		game.phase++;
+	}else if(game.phase==28){
+
+		board.fire[1][1]=0;
+		board.fire[2][2]=0;
+		draw_board();
+		phase_change(tmp_s,tmp_p);
+		game.ap-=2;
+		
+		draw_circle(2,1);
+		clear_message();
+		add_message("再抽選の結果、地点[2,1]が選ばれました。");
+		add_message("左と下の炎が除去されました。");
+		add_message("　");
+		add_message("良い地点が抽選されれば");
+		add_message("消火アクションを超える成果を出すことも可能なのです。");
+
+		game.phase++;
+	}else if(game.phase==29){
+
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		card_td[4].style="background-color:#f0e0d0";
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("車両の運転:2AP");
+		add_message("車両を建物外周にそって走らせます。");
+		add_message("時計回り/反時計回りのどちらでも可能です。");
+		add_message("その車両の次の配置地点となる地点を選択することで");
+		add_message("車両を走らせることが出来ます。");
+
+		game.phase++;
+	}else if(game.phase==30){
+
+		choose_action();
+		draw_circle(7.5,0);
+		draw_circle(1.5,7);
+		draw_circle(0,3.5);
+		draw_circle(9,3.5);
+		phase_change(tmp_s,tmp_p);
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("現在の消防車/救急車の停車位置で具体例を示すと、");
+		add_message("○のある位置が次の配置地点となります。");
+		add_message("そこを選択すると車両を走らせる事が出来ます。");
+
+		game.phase++;
+
+	}else if(game.phase==31){
+
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("消防車の走行は現在のプレイヤーが乗っている必要がありますが、");
+		add_message("救急車は誰も乗っていなくても操作することができます。");
+		add_message("（救急車が到着した地点に要救助者がいれば即座に救出されます。）");
+		add_message("車両の走行は同時に他のプレイヤーを乗せることが出来ます。");
+
+		game.phase++;
+	}else if(game.phase==32){
+
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("プレイヤーを乗せて走行した場合、");
+		add_message("降車する位置は車両があるマスの中で任意に選びます。");
+		add_message("　");
+		add_message("今回はAPがたりないので割愛");
+
+		game.phase++;
+
+
+	}else if(game.phase==33){
+
+
+		card_td[9].style="background-color:#f0e0d0";
+		clear_message();
+		add_message("ターン中の行動がすべて終わったので");
+		add_message("「ターン終了」をクリックして終了します。");
+
+		game.phase++;
+
+	}else if(game.phase==34){
+		show_option(["次へ"]);
+		draw_board();
+		draw_circle(1,2);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("今回は地点[1,2]が選ばれました。");
+		add_message("既に炎があるので「爆発」が起きます。");
+		add_message("　");
+		add_message("これから「爆発」の説明をします。");
+
+		game.phase++;
+
+	}else if(game.phase==35){
+
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「爆発」が起きたら上下左右のマスに以下の影響を与えます。");
+		add_message("・壁がある場合には「壁を壊す」同様に損傷を与えます。");
+		add_message("・扉がある場合には取り除きます。");
+		add_message("・扉が開いていたり阻む物がなければ炎が発生し、");
+		add_message("　既に炎がある場合には「ショックウェーブ」が起きます。");
+
+		game.phase++;
+	}else if(game.phase==36){
+
+		explode(1,2);
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「ショックウェーブ」が起きたら進行方向に以下の影響を与えます。");
+		add_message("・進行が止まるか画面端に到達するまで道中に炎が発生します。");
+		add_message("・壁がある場合には「壁を壊す」同様に損傷を与え、進行が止まります。");
+		add_message("・扉の場合には取り除き、閉まってたらそこで進行が止まります。");
+		add_message("・扉が開いてたり阻む物がなければ画面端まで進行します");
+
+		game.phase++;
+
+	}else if(game.phase==37){
+
+		draw_board();
+		draw_circle(1,4);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ところで、爆発の結果、危険物のあるマスに炎が発生しましたね。");
+		add_message("危険物のマスに炎が発生したので危険物の爆発処理を行います。");
+
+		game.phase++;
+
+	}else if(game.phase==38){
+
+		hazmat[0].status=0;
+		explode(1,4);
+		add_hotspot(1,4);
+		show_option(["次へ"]);
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("危険物がある地点に炎が発生した場合、即座に爆発します。");
+		add_message("また、先述の爆発処理に加えて高温点が追加されます。");
+		add_message("今回は上からのショックウェーブで爆発したので");
+		add_message("炎をさかのぼっておかえりショックウェーブが起きます。ｶﾜｲｲ");
+
+		game.phase++;
+
+	}else if(game.phase==39){
+
+		draw_board();
+		draw_circle(1,2);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("さらに、最初の「炎の拡大」が起きた地点に高温点がありますね。");
+		add_message("高温点があるマスなので、もう一度「炎の拡大」処理を行います。");
+		add_message("　");
+		add_message("再び高温点があるマスが選ばれた場合にも同様に処理します。");
+		add_message("これは高温点がないマスが選ばれるまで続きます。")
+
+		game.phase++;
+
+	}else if(game.phase==40){
+
+
+		explode(8,2);
+		draw_board();
+		draw_circle(8,2);
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("2度目の「炎の拡大」は[8,2]が選ばれました。");
+		add_message("高温点がないのは幸いですが、爆発はつらいですね。");
+		game.phase++;
+
+	}else if(game.phase==41){
+
+
+		add_hotspot(8,2);
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		add_message("高温点によって再度「炎の拡大」が発生した地点には");
+		add_message("新たな高温点が付与されます。（既にある場合は付与されません。）");
+		add_message("ゲーム開始時に追加で用意した高温点が尽きたら付与しません。");
+		game.phase++;
+
+	}else if(game.phase==42){
+
+
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」が終了したところで「不審箇所の補充」です。");
+		add_message("　");
+		add_message("不審箇所が焼かれている場合は要救助者の存否を確認し、");
+		add_message("要救助者が焼かれてたら死亡します。");
+		game.phase++;
+
+	}else if(game.phase==43){
+
+		poi[0].status = 2;
+		poi[2].status = 0;
+		draw_board();
+		show_option(["次へ"]);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("右の不審箇所は誤報でしたが、左の不審箇所には人がいました。");
+		add_message("　");
+		add_message("要救助者がいた場合には死亡("+emoji["dead"].chara+")が1増えます。");
+		add_message("4名死亡させた時点で敗北が決まります。");
+		add_message("焼かれた不審箇所は取り除かれ、新たに不審箇所が補充されます。");
+		game.phase++;
+
+	}else if(game.phase==44){
+
+		poi[0].status = 0;
+		game.dead++;
+		refill_poi();
+		phase_change(tmp_s,tmp_p);
+
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("このように各プレイヤーでターンを進めていき、")
+		add_message("建物の耐久値がなくなるまでに要救助者を救い出すことを目指して");
+		add_message("奮闘していきましょう！");
+		add_message("　");
+		add_message("7名救出したあとも、10人完全救出を目指して続行できます。");
+		game.phase++;
+
+	}else if(game.phase == 100){
+		game.difficulty = -1;
+		init_map("first_easy");
+		player=[{role:"generalist",x:-1,y:-1,grab:[],color:p_color[0],chara:"p1",ap:0}];
+		player.push({role:"generalist",x:-1,y:-1,grab:[],color:p_color[1],chara:"p2",ap:0});
+		player.push({role:"generalist",x:-1,y:-1,grab:[],color:p_color[2],chara:"p3",ap:0});
+		game.damage=24;
+		game.poi_rest=15;
+		game.turn = 0;
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		show_option(["次へ"]);
+		add_message(" - チュートリアル (簡易ルール) - ");
+		add_message("　");
+		add_message("「RESCUE」は各プレイヤーが消防士となって火災を消火しつつ、");
+		add_message("24ポイントある建物の耐久値がなくなる前に");
+		add_message("要救助者を発見し、救出していくことを目指すゲームです。");
+
+		game.phase++;
+	}else if(game.phase==101){
+
+
+		board.fire[2][2]=2;
+		board.fire[3][2]=2;
+		board.fire[2][3]=2;
+		board.fire[3][3]=2;
+		board.fire[4][3]=2;
+		board.fire[5][3]=2;
+		board.fire[4][4]=2;
+		board.fire[6][5]=2;
+		board.fire[7][5]=2;
+		board.fire[6][6]=2;
+		
+		poi.push({x:4,y:2,grab:0,who:0,status:1});game.poi_rest--;
+		poi.push({x:1,y:5,grab:0,who:0,status:1});game.poi_rest--;
+		poi.push({x:8,y:5,grab:0,who:0,status:1});game.poi_rest--;
+
+
+		show_option(["次へ"]);
+
+		draw_board();
+		clear_message();
+		add_message("ゲームの開始時に炎と不審箇所(<span style='background-color:"+poi_color+"'>"+emoji["poi"].chara+"</span>)が定位置に配置されます。");
+;
+		add_message("　");
+		game.phase=104;
+
+	}else if(game.phase==104){
+
+		clear_message();
+
+		show_option(["次へ"]);
+		add_message("その後、プレイヤーの初期位置を決めます。");
+		add_message("プレイヤーは建物外周のいずれかの位置から");
+		add_message("初期位置を選びクリックしてください。");
+		game.phase++;
+
+	}else if(game.phase==105){
+
+		clear_message();
+
+		player[0].x = 3;player[0].y=7;
+		player[1].x = 0;player[1].y=3;
+		player[2].x = 0;player[2].y=3;
+		draw_board();
+
+		show_option(["次へ"]);
+		add_message("これでセットアップが完了しました。プレイヤー1から順にゲームが始まります。");
+		game.phase++;
+
+	}else if(game.phase==106){
+
+		take_my_turn();
+		phase_change(tmp_s,tmp_p);
+		clear_message();
+		add_message("ターンのはじめに4アクションポイント(AP、"+emoji["ap"].chara+"で表示)が");
+		add_message("付与されます。APが残っている限り、好きなアクションを好きな順で");
+		add_message("何度も実行することが出来ます。");
+		add_message("未使用のAPは4APまで次の自分のターンに持ち越すことが出来ます。");
+		game.phase++;
+
+	}else if(game.phase==107){
+
+		card_td[0].style="background-color:#f0e0d0";
+		clear_message();
+		add_message("移動:1AP ／ 運ぶ:2AP");
+		add_message("隣接マスを指定してそちらの方向に移動します。");
+		add_message("何かをつかんだ状態であれば、移動と同時に運びます。");
+		add_message("何もつかんでいなければ炎("+emoji["fire"].chara+")の中にも移動できます。（2AP）");
+		add_message("ただし、炎の上でターンを終了することは出来ません。");
+
+		game.phase++;
+
+	}else if(game.phase==108){
+
+		player[0].x=1;player[0].y=5;
+		game.ap=0;
+		poi[1].status = 2;
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		draw_board();
+		clear_message();
+		add_message("不審箇所と同じマスにいる場合、要救助者の存否が判明します。");
+		add_message("（不審箇所の中に要救助者が10、誤報が5あります。）");
+		add_message("　");
+		add_message("要救助者の存在が判明したら"+emoji["victim"].chara+"で表示されます。");
+		game.phase++;
+
+
+	}else if(game.phase==109){
+
+		game.ap=4;
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		draw_circle(1,4);
+
+		card_td[1].style="background-color:#f0e0d0";
+		clear_message();
+		add_message("扉の開閉:1AP ／ 壁を壊す:2AP("+role["rescue"].name+"は1AP)");
+		add_message("隣接マスを指定すると、間にある扉の開閉や壁の破壊を行います。");
+		add_message("無傷→損傷→開通の変化ごとに建物の耐久値（"+emoji["damage"].chara+"）が減ります。");
+		game.phase++;
+
+	}else if(game.phase==110){
+
+		chop(1,4);
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("無傷の壁（実線）を壊すと損傷した壁（破線）になり、");
+		add_message("損傷した壁を壊すと開通し、通れるようになります。");
+		add_message("　");
+		game.phase++;
+
+	}else if(game.phase==111){
+
+		chop(1,4);
+		clear_message();
+		phase_change(tmp_s,tmp_p);
+		add_message("ただし、無傷→損傷→開通の変化ごとに");
+		add_message("建物の耐久値（"+emoji["damage"].chara+"）が1減ります。");
+		game.phase++;
+
+	}else if(game.phase==112){
+		game.ap=4;
+		player[0].x=4;player[0].y=5;
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		add_message("また、オレンジ色の扉は開け閉めすることが出来ます。");
+		game.phase++;
+
+	}else if(game.phase==113){
+		chop(4,4);
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("開いていれば通れるようになります。");
+		add_message("閉まっていれば後述する爆発やショックウェーブを");
+		add_message("止める事ができます。");
+		add_message("状況に応じて開閉しましょう。");
+		game.phase++;
+
+
+	}else if(game.phase==114){
+
+		game.ap=4;
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		clear_message();
+		card_td[2].style="background-color:#f0e0d0";
+		add_message("消火:1AP");
+		add_message("自身がいるマスか隣接マスを指定すると、");
+		add_message("そこに煙("+emoji["smoke"].chara+")がある場合は除去し、");
+		add_message("炎("+emoji["fire"].chara+")がある場合は煙("+emoji["smoke"].chara+")に変えます。");
+		game.phase++;
+
+
+
+	}else if(game.phase==115){
+
+
+		extinguish(4,4);
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("炎を除去するにはこのアクションを２回行う必要があります。");
+		add_message("隣のマスと壁や閉まった扉で阻まれている場合は消火できません。");
+
+		game.phase++;
+
+
+	}else if(game.phase==116){
+
+		extinguish(4,4);
+
+		phase_change(tmp_s,tmp_p);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("消火アクションを2回行って完全に消火しました。");
+		game.phase++;
+
+	}else if(game.phase==117){
+
+		game.ap=4;
+		player[0].x=1;player[0].y=5;
+		choose_action();
+		phase_change(tmp_s,tmp_p);
+		card_td[3].style="background-color:#f0e0d0";
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("つかむ／手放す:0AP");
+		add_message("自分のマスに要救助者がいれば");
+		add_message("それをつかむことが出来ます。");
+		add_message("つかんだら移動の際に運ぶことができるようになります。");
+		add_message("各プレイヤー１人までつかむ事ができます。");
+		game.phase++;
+
+	}else if(game.phase==118){
+
+
+		grab(0,0);
+		phase_change(tmp_s,tmp_p);
+		
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("何かをつかんでいる状態だと");
+		add_message("「移動」アクションが「運ぶ」アクションに変わります。");
+		game.phase++;
+
+
+	}else if(game.phase==119){
+		player[0].x=3;player[0].y=6;
+		player_move(0,3,7);
+		game.ap=0;
+		phase_change(tmp_s,tmp_p);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("<b>要救助者</b>を<b>建物の外周まで運ぶ</b>ことで救出できます。");
+		add_message("　");
+		add_message("要救助者を救出したら生還者("+emoji["alive"].chara+")が1増えます。");
+		add_message("７人以上救出するれば勝利となります。");
+		game.phase++;
+
+	}else if(game.phase==120){
+
+
+		card_td[9].style="background-color:#f0e0d0";
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ターン中の行動がすべて終わったら");
+		add_message("「ターン終了」をクリックして終了します。");
+		add_message("　");
+		add_message("この時点で未使用のAP"+emoji["ap"].chara+"が持ち越されます。");
+
+		game.phase++;
+
+	}else if(game.phase==121){
+
+		show_option(["次へ"]);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ターン終了後は「炎の拡大」と「不審箇所の補充」を行い");
+		add_message("次のプレイヤーにターンが渡ります。");
+
+		game.phase++;
+
+	}else if(game.phase==122){
+		board.fire[7][2]=1;
+		show_option(["次へ"]);
+		draw_board();
+		draw_circle(7,2);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」ではランダムな地点に煙"+emoji["smoke"].chara+"が発生します。");
+
+		game.phase++;
+	}else if(game.phase==123){
+		board.fire[7][2]=2;
+		show_option(["次へ"]);
+		draw_board();
+		draw_circle(7,2);
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("既に煙"+emoji["smoke"].chara+"がある場合には炎"+emoji["fire"].chara+"が発生します。");
+		add_message("既に炎"+emoji["fire"].chara+"があった場合は「爆発」が起きます。");
+
+		game.phase++;
+	}else if(game.phase==124){
+		for(var xx=0;xx<board.yoko;xx++)
+		for(var yy=0;yy<board.tate;yy++)
+		board.fire[xx][yy]=0;
+
+		board.fire[3][3]=2;
+		board.fire[4][3]=2;
+		draw_board();
+
+		draw_circle(3,3);
+		clear_message();
+
+		add_message("既に炎"+emoji["fire"].chara+"があった場合は「爆発」が起きます。");
+		
+		add_message("爆発は起こった地点の上下左右のマスに影響を与えます。");
+		add_message("　");
+		add_message("この盤面の地点[3,3]で爆発が起こった場合を例に説明します。");
+		game.phase++;
+
+	}else if(game.phase==125){
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「爆発」が起きたら上下左右のマスに以下の影響を与えます。");
+		add_message("・壁がある場合には「壁を壊す」同様に損傷を与えます。");
+		add_message("・扉がある場合には取り除きます。");
+		add_message("・扉が開いていたり壁がなければ炎が発生します。");
+		add_message("・その際、既に炎がある場合は「ショックウェーブ」が起きます。");
+
+		game.phase++;
+
+	}else if(game.phase==126){
+
+		explode(3,3);
+		draw_board();
+		draw_circle(3,3);
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「ショックウェーブ」は進行方向のマスに炎を発生させます。");
+		add_message("・壁があったら「壁を壊す」同様に損傷を与え、進行が止まります。");
+		add_message("・閉まっている扉があれば扉が取り除かれ、進行が止まります。");
+		add_message("・開いている扉があれば扉が取り除かれますが、進行は続きます。");
+		add_message("進行が止まるか画面端に到達するまで炎が発生します。");
+
+		game.phase++;
+
+	}else if(game.phase==127){
+
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("今回の例では、地点[3,3]で起きた爆発は以下の次のとおりです。");
+		add_message("・左の扉は閉まっていたので取り除かれ、炎は発生しません。");
+		add_message("・上の壁は損傷をうけましたが、炎は発生しません。");
+		add_message("・下は何もないマスなので、炎が発生しました。");
+		add_message("・右はショックウェーブが起き、地点[6,3]の右壁が損傷しました。");
+
+		game.phase++;
+
+	}else if(game.phase==128){
+
+
+		for(var xx=0;xx<board.yoko;xx++)
+		for(var yy=0;yy<board.tate;yy++)
+		board.fire[xx][yy]=0;
+
+		board.fire[1][1]=1;
+		board.fire[1][2]=1;
+		board.fire[2][2]=1;
+		board.fire[3][2]=1;
+		board.fire[3][1]=1;
+		board.fire[4][1]=1;
+		board.fire[5][1]=1;
+		board.fire[5][2]=1;
+		board.fire[6][1]=1;
+		board.fire[6][2]=1;
+		board.wall_yoko[3][1]=1;
+
+		poi[0].y = 1;
+		player[0].y=1;
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("また、炎と隣接し、壁や閉じられた扉で隔てられていない煙は");
+		add_message("引火して炎に変わります。");
+
+		game.phase++;
+
+	}else if(game.phase==129){
+
+		board.fire[1][1]=2;
+		draw_board();
+		draw_circle(1,1);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("これは連鎖的に発生し、炎に変わったマスの隣に煙があった場合");
+		add_message("その煙も炎に変わります。");
+		add_message("　");
+		add_message("今回の例で地点[1,1]の煙が炎になった場合を確認しましょう。");
+
+		game.phase++;
+
+	}else if(game.phase==130){
+
+		board.fire[1][2]=2;
+		board.fire[2][2]=2;
+		board.fire[3][2]=2;
+		board.fire[3][1]=2;
+		board.fire[4][1]=2;
+		board.fire[5][1]=2;
+		board.fire[5][2]=2;
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("このように煙が炎に変わります。");
+		add_message("閉じた扉と壁で隔てられている煙は炎に変わりません。");
+		game.phase++;
+
+	}else if(game.phase==131){
+
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("「炎の拡大」の後、プレイヤーや不審箇所が炎の中にいる場合、");
+		add_message("不審箇所は要救助者か誤報か識別され、");
+		add_message("要救助者が炎の中にいた場合は死亡し、");
+		add_message("プレイヤーは救急車の配置地点のうち最も近い地点に移ります。");
+		game.phase++;
+
+	}else if(game.phase==132){
+
+		poi[0].status = 2;
+		draw_board();
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("この場合、まず地点[4,3]にいた不審箇所が識別されます");
+		add_message("要救助者がいたので死亡("+emoji["dead"].chara+")が1増え、");
+		add_message("ゲームから取り除かれます。");
+		add_message("　");
+		add_message("4名死亡させた時点で敗北が決まります。");
+		game.phase++;
+
+
+
+	}else if(game.phase==133){
+		poi[0].status = 0;
+		game.dead++;
+		player[0].x=5;player[0].y=0;
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("次に、プレイヤー1が炎にいるので、");
+		add_message("最も近い救急車の配置地点に移動します。");
+		game.phase++;
+
+	}else if(game.phase==134){
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("最後に、「不審箇所の補充」を行います。");
+		add_message("不審箇所と要救助者の合計が3つになるまで、");
+		add_message("不審箇所や要救助者がいないランダムな地点が選ばれ");
+		add_message("そこに新たな不審箇所が発生します。");
+		game.phase++;
+
+	}else if(game.phase==135){
+		refill_poi();
+		phase_change(tmp_s,tmp_p);
+		draw_board();
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("炎や煙がある場所であればそれらが消え、");
+		add_message("プレイヤーがいる場所ならば直ちに要救助者の存否が判明します。");
+		game.phase++;
+
+	}else if(game.phase==136){
+		show_option(["次へ"]);
+		clear_message();
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("このように各プレイヤーでターンを進めていき、")
+		add_message("建物の耐久値がなくなるまでに要救助者を救い出すことを目指して");
+		add_message("奮闘していきましょう！");
+		add_message("　");
+		add_message("7名救出したあとも、10人完全救出を目指して続行できます。");
+		game.phase++;
+
+	}else if(game.phase==200){
+		game.difficulty = 0;
+		init_map("first_easy");
+		player=[{role:"generalist",x:-1,y:-1,grab:[],color:p_color[0],chara:"p1",ap:0}];
+		player.push({role:"generalist",x:-1,y:-1,grab:[],color:p_color[1],chara:"p2",ap:0});
+		player.push({role:"generalist",x:-1,y:-1,grab:[],color:p_color[2],chara:"p3",ap:0});
+		game.damage=24;
+		game.poi_rest=15;
+		game.turn = 0;
+
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		show_option(["次へ"]);
+		add_message(" - ロールの説明 - ");
+		add_message("　");
+		add_message("通常ルールのプレイでは各ロールに応じて");
+		add_message("APを付与されたり特殊アクションを行えるようになります。");
+		add_message("　");
+
+		game.phase++;
+
+	}else if(game.phase==201){
+
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("　");
+		add_message("特殊能力はありませんが、通常よりAPが多いキャラです");
+		add_message("　");
+
+		game.phase++;
+
+	}else if(game.phase==202){
+		player[0].role="cafs";
+		game.ap = role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("　");
+		add_message("「消火」アクションを特殊APを使って行うことが出来ます。");
+		add_message("通常のAPを使って「消火」アクション行うことも出来ます。");
+		add_message("（特殊APは次のターンに繰り越すことが出来ません。）");
+
+		game.phase++;
+
+	}else if(game.phase==203){
+		player[0].role="imaging";
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("　");
+		add_message("特殊アクション「"+role["imaging"].ex_action[0].name+"」(1AP)が行えます。");
+		add_message("離れた不審箇所1カ所を指定して");
+		add_message("その不審箇所が要救助者か誤報か識別することが出来ます。");
+
+		game.phase++;
+
+	}else if(game.phase==204){
+		player[0].role="paramedic";
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("　");
+		add_message("特殊アクション「"+role["paramedic"].ex_action[0].name+"」(1AP)が行えます。");
+		add_message("同じマスにいる"+poi_name[2]+emoji["victim"].chara+"を蘇生して");
+		add_message(poi_name[3]+emoji["healed"].chara+"にすることが出来ます。");
+
+
+		game.phase++;
+
+	}else if(game.phase==205){
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+poi_name[3]+"は1APで運ぶことができます。");
+		add_message("　");
+		add_message("また、別の蘇生していない"+poi_name[2]+"を運ぶときに");
+		add_message("同じマスの"+poi_name[3]+"を一緒に運ぶことが出来ます。");
+		add_message(poi_name[3]+"を連れて炎に侵入することは出来ません。");
+
+
+		game.phase++;
+	}else if(game.phase==206){
+
+		player[0].role="hazmat";
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("　");
+		add_message("特殊アクション「"+role["hazmat"].ex_action[0].name+"」(1AP)が行えます。");
+		add_message("同じマスにいる危険物をその場で処分します。");
+
+		game.phase++;
+	}else if(game.phase==207){
+
+		player[0].role="rescue";
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("「移動/運ぶ」アクションに特殊APが使用できます。");
+		add_message("通常のAPを使って同アクション行うことも出来ます。");
+		add_message("（特殊APは次のターンに繰り越すことが出来ません。）");
+		add_message("また、「壁を壊す」アクションを1APで行えます。");
+
+		game.phase++;
+	}else if(game.phase==208){
+
+		player[0].role="driver";
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("「消防車の放水」アクションを2APで行うことが出来ます。");
+		add_message("また、ランダムに選ばれた放水の起点について");
+		add_message("縦か横かその両方を再抽選することが出来ます。");
+		add_message("片方を再抽選した後に、もう片方を再抽選することもできます。");
+
+		game.phase++;
+	}else if(game.phase==209){
+
+		player[0].role="captain";
+		game.ap=role[player[0].role].ap;
+		game.sap=role[player[0].role].sap;
+		show_option(["次へ"]);
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		clear_message();
+		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
+		add_message("特殊アクション「"+role["captain"].ex_action[0].name+"」が行えます。");
+		add_message("自分のAPを使い、他者を移動させるか扉を開閉させます。");
+		add_message("特殊APと通常APどちらでも使えます。");
+		add_message(role["cafs"].name+"に対して1ターンに1APまでしか使えません。");
+
+		game.phase++;
+	}else{
+		enter_start_menu();
+	}
+}
+
+//-------------------------------------------------------------------------------------
+//--描画関連---------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
+
+function masu_haji(a){//升目と座標の変換。結構使うので関数化。
+	return (a) * cell_size;
+}
+
+function masu_naka(a){//升目の真ん中の座標を求める。結構使うので関数化。
+	return (a+0.5) * cell_size;
+}
+
+function draw_board(){//ボードを表示する。
+	//--背景ぬりつぶし
+	context.fillStyle="hsl(50,100%,90%)";
+	context.fillRect(0,0,game_display.width,game_display.height);
+
+	//消防車と救急車の停車位置の塗り
+	for(i=0;i<4;i++){
+		var xn = Math.min(board.fireengine_place[i][0][0],board.fireengine_place[i][1][0]);
+		var xm = Math.max(board.fireengine_place[i][0][0],board.fireengine_place[i][1][0]);
+		var yn = Math.min(board.fireengine_place[i][0][1],board.fireengine_place[i][1][1]);
+		var ym = Math.max(board.fireengine_place[i][0][1],board.fireengine_place[i][1][1]);
+		if(board.fireengine_pos==i){
+			context.fillStyle = fireengine_color;
+			context.fillRect(masu_haji(xn+0.1),masu_haji(yn+0.1),masu_haji((xm-xn)+0.8),masu_haji((ym-yn)+0.8));
+			draw_emoji("fireengine",masu_naka((xm+xn)/2),masu_naka((ym+yn)/2));
+		}else{
+			context.fillStyle = "rgba("+fireengine_color.substring(4,fireengine_color.length-1)+",40%)";
+			context.fillRect(masu_haji(xn+0.1),masu_haji(yn+0.1),masu_haji((xm-xn)+0.8),masu_haji((ym-yn)+0.8));
+		}
+
+		xn = Math.min(board.ambulance_place[i][0][0],board.ambulance_place[i][1][0]);
+		xm = Math.max(board.ambulance_place[i][0][0],board.ambulance_place[i][1][0]);
+		yn = Math.min(board.ambulance_place[i][0][1],board.ambulance_place[i][1][1]);
+		ym = Math.max(board.ambulance_place[i][0][1],board.ambulance_place[i][1][1]);
+		if(board.ambulance_pos==i){
+			context.fillStyle = ambulance_color;
+			context.fillRect(masu_haji(xn+0.1),masu_haji(yn+0.1),masu_haji((xm-xn)+0.8),masu_haji((ym-yn)+0.8));
+			draw_emoji("ambulance",masu_naka((xm+xn)/2),masu_naka((ym+yn)/2));
+		}else{
+			context.fillStyle = "rgba("+ambulance_color.substring(4,ambulance_color.length-1)+",40%)";
+			context.fillRect(masu_haji(xn+0.1),masu_haji(yn+0.1),masu_haji((xm-xn)+0.8),masu_haji((ym-yn)+0.8));
+		}
+		//console.log("地点["+xn+","+yn+"]["+xm+","+ym+"]に救急車描画");
+		
+	};
+
+	//升目のフチ
+	context.strokeStyle = "hsl(50,10%,70%)";
+	context.lineWidth = 1;
+	for(var i=0;i<board.tate;i++){
+		for(var j=0;j<board.yoko;j++){
+			context.strokeRect(masu_haji(j),masu_haji(i),cell_size,cell_size);
+		}
+	}
+
+	//高音点と炎マーカー
+	for(var x=0;x<board.yoko;x++){
+		for(var y=0;y<board.tate;y++){
+
+			if(board.hotspot[x][y] == 1){
+				draw_emoji("hotspot",masu_naka(x+0.45-emoji["hotspot"].multi/2),masu_naka(y-0.45+emoji["hotspot"].multi/2));
+			}
+			if(board.fire[x][y] == 1){
+				draw_emoji("smoke",masu_naka(x),masu_naka(y));
+			}else if(board.fire[x][y] == 2){
+				draw_emoji("fire",masu_naka(x),masu_naka(y));
+			}
+		}
+	}
+
+
+	//マスの下にするマーカーをいったんきれいにする。
+	for(var x=0;x<board.yoko;x++){
+		for(var y=0;y<board.tate;y++){
+			board.marker[x][y]=0;
+		}
+	}
+	
+	//マスでの重複を記録していく
+	for(var i=0;i<player.length;i++){
+		if(player[i].x>=0)board.marker[player[i].x][player[i].y]++;
+	}
+
+	//プレイヤー駒を描画
+	for(var i=0;i<player.length;i++){
+		if(player[i].x>=0)draw_player(player[i]);
+	}
+
+	//マスの下にするマーカーをいったんきれいにする。
+	for(var x=0;x<board.yoko;x++){
+		for(var y=0;y<board.tate;y++){
+			board.marker[x][y]=0;
+		}
+	}
+
+	//POIと危険物のマスごとに置かれる数を記録する
+	for(var i=0;i<poi.length;i++){
+		if(poi[i].status>0){board.marker[poi[i].x][poi[i].y]++;}
+	}
+	for(var i=0;i<hazmat.length;i++){
+		if(hazmat[i].status>0){board.marker[hazmat[i].x][hazmat[i].y]++;}
+	}
+
+	//POIと危険物のマーカーを盤面に描画していく
+	for(var i=0;i<poi.length;i++){
+		if(poi[i].status==1){draw_marker("poi",poi[i].x,poi[i].y);}
+		if(poi[i].status==2){draw_marker("victim",poi[i].x,poi[i].y);}
+		if(poi[i].status==3){draw_marker("healed",poi[i].x,poi[i].y);}
+	}
+	for(var i=0;i<hazmat.length;i++){
+		if(hazmat[i].status>0){draw_marker("hazmat",hazmat[i].x,hazmat[i].y);}
+	}
+
+	//壁の描画
+	context.lineWidth = 5;
+	for(var x=0;x<board.yoko;x++){
+		for(var y=0;y<board.tate;y++){
+		for(var k=0;k<2;k++){//0:縦線,1;横線の切替え
+
+			if(k==0){l= board.wall_tate[x][y];}
+			else{l= board.wall_yoko[x][y];}
+			
+			if(l==1){//ドア開いてる
+				context.strokeStyle = "rgb(255,128,0)";
+				context.beginPath();
+				context.moveTo(masu_haji(x+k),masu_haji(y+1-k));
+				context.lineTo(masu_haji(x+0.4*k+0.4),masu_haji(y-0.4*k+0.8));
+				context.moveTo(masu_haji(x+0.6*k+0.6),masu_haji(y-0.6*k+1.2));
+				context.lineTo(masu_haji(x+1),masu_haji(y+1));
+				context.stroke();
+			}else if(l==2){//しまってるドア
+				context.strokeStyle = "rgb(255,128,0)";
+				context.beginPath();
+				context.moveTo(masu_haji(x+k),masu_haji(y+1-k));
+				context.lineTo(masu_haji(x+0.45+0.55*k),masu_haji(y+1-0.55*k));
+				context.moveTo(masu_haji(x+0.55+0.45*k),masu_haji(y+1-0.45*k));
+				context.lineTo(masu_haji(x+1),masu_haji(y+1));
+				context.stroke();
+			}else if(l==3){//壊れかけの壁
+				context.setLineDash([Math.floor(cell_size/10),Math.floor(cell_size/10)]);
+				context.strokeStyle = "rgb(0,0,0)";
+				context.beginPath();
+				context.moveTo(masu_haji(x+k),masu_haji(y+1));
+				context.lineTo(masu_haji(x+1),masu_haji(y+1-k));
+				context.stroke();
+				context.setLineDash([]);
+			}else if(l==4){//無傷の壁
+				context.strokeStyle = "rgb(0,0,0)";
+				context.beginPath();
+				context.moveTo(masu_haji(x+k),masu_haji(y+1));
+				context.lineTo(masu_haji(x+1),masu_haji(y+1-k));
+				context.stroke();
+			}
+		}
+		}
+	}
+}
+
+function draw_emoji(l,x,y){
+	context.textBaseline = "middle";
+	context.font = emoji[l].size+"px monospace";
+
+	tmp = context.measureText(emoji[l].chara).width / 2;
+	context.fillStyle="rgb(0,0,0)";
+	context.fillText(emoji[l].chara,x - tmp,y);
+}
+
+function draw_marker(l,x,y,max_w = board.yoko * cell_size){
+
+	var xx;
+	var yy;
+
+	if(board.marker[x][y]==1){
+
+		xx = masu_naka(x);
+		yy = masu_naka(y+0.45-emoji[l].multi/2);
+	}else{
+		var s = Math.floor(board.marker[x][y]);
+		var p = board.marker[x][y] - s;
+		xx = masu_haji(x+0.05+emoji[l].multi/2+p*(1-emoji[l].multi/0.9));
+		yy = masu_naka(y+0.45-emoji[l].multi/2);
+		board.marker[x][y]+=0.9/(s-1);
+	}
+	
+	if(l=="poi" || l=="victim" || l=="healed" || l=="hazmat" ){
+		if(l=="hazmat"){context.fillStyle = hazmat_color;}
+		else{context.fillStyle = poi_color;}
+		context.beginPath();
+		context.arc(xx+emoji[l].multi/2,yy,cell_size/2*emoji[l].multi,0,2 * Math.PI);
+		context.closePath();
+		context.fill();
+	}
+	
+	draw_emoji(l,xx,yy);
+}
+function resize_board(){ //ボードのリサイズ
+
+	card_display.innerHTML="";
+	message_display.innerHTML = ""
+	for(var i = 0;i<5;i++){
+		var roo = message_display.insertRow();
+		c = roo.insertCell();
+		c.innerHTML ="　";
+	}
+	if(window.innerHeight>window.innerWidth){
+		document.querySelector(".board_shita").appendChild(document.querySelector(".card_display"));
+		board_ul.colSpan=2;
+		board_ul.rowSpan=1;
+		board_migi.colSpan=1;
+		card_pos = 0;
+		dummu_option();
+		cell_size = Math.floor(Math.min((document.documentElement.clientHeight/2 - message_display.clientHeight - 100) / board.tate,(document.documentElement.clientWidth - 100)/board.yoko));
+		game_display.width = board.yoko * cell_size;
+		game_display.height = board.tate * cell_size;
+		while(document.documentElement.scrollWidth <= document.documentElement.clientWidth && game_display.height + message_display.clientHeight <= document.documentElement.clientHeight /2){
+			cell_size++;
+			game_display.width = board.yoko * cell_size;
+			game_display.height = board.tate * cell_size;
+		}
+
+	}else{
+
+		document.querySelector(".board_migi").appendChild(document.querySelector(".card_display"));
+		board_ul.colSpan=1;
+		board_ul.rowSpan=2;
+		board_migi.colSpan=2;
+		card_pos = 1;
+		dummu_option();
+
+		cell_size = Math.floor(Math.min((document.documentElement.clientHeight - message_display.clientHeight - 100) / board.tate,(document.documentElement.clientWidth * 2/3 - 100)/board.yoko));
+		game_display.width = board.yoko * cell_size;
+		game_display.height = board.tate * cell_size;
+		while(document.documentElement.scrollHeight<=document.documentElement.clientHeight && game_display.width <= document.documentElement.clientWidth * 2/3){
+			cell_size++;
+			game_display.width = board.yoko * cell_size;
+			game_display.height = board.tate * cell_size;
+		}
+
+	}
+	//console.log("card_pos:"+card_pos);
+
+	cell_size--;
+	game_display.width = board.yoko * cell_size;
+	game_display.height = board.tate * cell_size;
+
+	var siz = 5;
+	card_display.style="font-size:"+siz+"pt;white-space:nowrap;";
+
+	while(document.documentElement.scrollHeight<=document.documentElement.clientHeight && document.documentElement.scrollWidth <= document.documentElement.clientWidth){
+		siz++;
+		card_display.style="font-size:"+siz+"pt;white-space:nowrap;";
+	}
+
+	siz--;
+	card_display.style="font-size:"+siz+"pt;white-space:nowrap;";
+	card_font_size = siz;
+	Object.keys(emoji).forEach(function(key){
+		emoji[key].size = 5;
+		context.font = "5px monospace";
+		while(context.measureText(emoji[key].chara).actualBoundingBoxAscent + context.measureText(emoji[key].chara).actualBoundingBoxDescent < cell_size *emoji[key].multi && context.measureText(emoji[key].chara).width< cell_size *emoji[key].multi){
+			emoji[key].size++;
+			context.font = emoji[key].size+"px monospace";
+		}
+		emoji[key].size--;
+	});
+
+	if(card_labels[0].indexOf("select")>0){
+		show_role(role_selector.length);
+	}else{
+		show_option(card_labels);
+	}
+
+	show_message();
+	draw_board();	
+
+}
+
+
+function draw_player(a){//キャラ描画の関数
+
+	if(board.marker[a.x][a.y]==1){
+		a.current_x = masu_naka(a.x);
+		a.current_y = masu_naka(a.y);
+	}else{
+		var s = Math.floor(board.marker[a.x][a.y]);
+		var p = board.marker[a.x][a.y] - s;
+		a.current_x = masu_haji(a.x+0.05+emoji[a.chara].multi/2+p*(1-emoji[a.chara].multi/0.9));
+		a.current_y = masu_naka(a.y);
+		board.marker[a.x][a.y]+=0.9/(s-1);
+	}
+
+	context.fillStyle = a.color;
+	context.beginPath();
+	context.arc(a.current_x,a.current_y,cell_size/2*emoji[a.chara].multi,0,2 * Math.PI);
+	context.closePath();
+	context.fill();
+
+	context.fillStyle = "RGB(32,32,32)";
+	context.textBaseline = "middle";
+	context.font = emoji[a.chara].size+"px monospace";
+	tmp = context.measureText(emoji[a.chara].chara).width / 2;
+	context.fillText(emoji[a.chara].chara,a.current_x - tmp,a.current_y);
+	
+}
+
+function draw_circle(xx,yy){//位置を示すワッカさんの描画
+
+
+	context.strokeStyle = "rgba(0,0,0,50%)";
+	
+	context.lineWidth = Math.floor(cell_size/10);
+	context.beginPath();
+	context.arc(masu_naka(xx),masu_naka(yy),cell_size*0.4,0,2 * Math.PI);
+	context.closePath();
+	context.stroke();
+
+}
+
+function option_header(a = true){
+	var roo = card_display.insertRow();
+	c = roo.insertCell();
+	c.innerHTML = ""+emoji["damage"].chara + ":"+game.damage+"　"+emoji["alive"].chara+":"+game.alive+" "+emoji["dead"].chara+":"+game.dead;
+	if(game.scene==3 && a == true){c.innerHTML += "　<input type='button' value='"+emoji["rewind"].chara+"' onClick='click_rewind();' style='font-size:"+(card_font_size-3)+"pt'>";}
+	if(card_pos==0){c.colSpan=2;}
+	roo = card_display.insertRow();
+	c = roo.insertCell();
+	if(card_pos==0){c.colSpan=2;}
+	c.innerHTML = emoji["poi"].chara+":"+game.poi_rest+" "+emoji["hotspot"].chara+":"+game.hotspot_remain+"　"+emoji["ap"].chara+":"+game.ap+" "+emoji["sap"].chara+":"+game.sap;
+	roo = card_display.insertRow();
+	c = roo.insertCell();
+	if(card_pos==0){c.colSpan=2;}
+	if(1==game.scene ||3<=game.scene){
+		if(game.difficulty<0){
+			c.innerHTML = "<span style='background-color:"+player[game.turn].color+"'>プレイヤー"+(game.turn+1)+"</span>";
+		}else{
+			c.innerHTML = "<span style='background-color:"+player[game.turn].color+"'>"+(game.turn+1)+":"+role[player[game.turn].role].name+"</span>";
+		}
+		
+	}else{
+		c.innerHTML = "　";
+	}
+	if(card_pos==0){c.colSpan=2;}
+
+	roo = card_display.insertRow();
+	c = roo.insertCell();
+	c.innerHTML = "━─━─━─━─━";
+	if(card_pos==0){
+		c = roo.insertCell();
+		c.innerHTML = "━─━─━─━─━";
+	}else{
+	c.innerHTML = "━─━─━─━─━─━─━";
+	}
+
+}
+
+function dummu_option(){
+	card_display.innerHTML = ""
+	option_header(false);
+
+	for(var i = 0;i<9;i++){
+		if(card_pos==1 || i%2==0)roo = card_display.insertRow();
+
+		c = roo.insertCell();
+		c.innerHTML ="ヒロ唐澤ナイフでメ";
+
+	}
+
+	if(card_pos==1 || i%2==0)roo = card_display.insertRow();
+	c = roo.insertCell();
+
+	c.innerHTML = "決定";
+
+
+}
+function show_role(a){
+	card_display.innerHTML = ""
+	role_selector = [];
+	var roo;
+
+	card_labels=[];
+	card_td = [];
+	option_header();
+
+
+	for(var i = 0;i<a || i<9;i++){
+		if(card_pos==1 || i%2==0)roo = card_display.insertRow();
+		c = roo.insertCell();
+		card_td.push(c);
+		if(i<a){
+			c.innerHTML =(i+1)+":";
+			let new_select = document.createElement('select');
+			new_select.style="font-size:"+(card_font_size*2/3)+"pt";
+			role_selector.push(new_select);
+			Object.keys(role).forEach(function(key){
+				let new_option = document.createElement('option');
+				new_option.value = key;
+				new_option.text = role[key].name;
+				new_select.appendChild(new_option);
+			});
+			new_select.options[i].selected = true;
+			c.appendChild(new_select);
+		}else{c.innerHTML ="　";}
+		card_labels.push(c.innerHTML);
+	}
+
+	if(card_pos==1 || i%2==0)roo = card_display.insertRow();
+	c = roo.insertCell();
+	card_td.push(c);
+	c.style="background-color:#fff0d0";
+	c.innerHTML = "決定";
+	c.onclick = addon_cast(i);
+	card_labels.push(c.innerHTML);
+
+}
+
+function show_option(a){
+	card_display.innerHTML = ""
+
+	card_labels = a;//再描画用に取っとく
+	card_td = [];
+
+	var roo;	
+	option_header();
+
+	for(var i = 0;i<a.length || i<9;i++){
+		if(card_pos==1 || i%2==0)roo = card_display.insertRow();
+		c = roo.insertCell();
+		card_td.push(c);
+		if(i<a.length){
+			c.innerHTML = a[i];
+			if(a[i]!="　" && a[i].indexOf("select")<0){
+				if(c.innerHTML!="　")c.style="background-color:#fff0d0;";
+				c.onclick = addon_cast(i);
+			}
+		}else{c.innerHTML ="　";}
+	}
+	if(game.scene==3 && game.phase==0){
+		if(card_pos==1 || i%2==0) roo = card_display.insertRow();
+		c = roo.insertCell();
+		card_td.push(c);
+		c.style="background-color:#fff0d0;";
+		c.innerHTML = "ターン終了";
+		c.onclick = begining_end_phase;
+	}else{
+		if(card_pos==1 || a%2==0)roo = card_display.insertRow();
+		c = roo.insertCell();
+		card_td.push(c);
+		c.innerHTML = "　";
+	}
+}
+
+function addon_cast(a){return function(){click_option(a);}}
+
+
+function clear_message(){
+	message_array=[];
+	show_message();
+}
+
+function add_message(a){
+	message_array.push(a);
+	show_message();
+}
+
+function show_message(){
+		message_display.innerHTML = ""
+	for(var i = 0;i<message_array.length || i<5;i++){
+		var roo = message_display.insertRow();
+		c = roo.insertCell();
+		if(i<message_array.length){
+			c.innerHTML = message_array[i];
+		}else{c.innerHTML ="　";}
+	}
+}
+
+
+
+
+//--------------判定用関数群----------------
+function is_white_space(xx,yy){
+
+	if(is_in_stage(xx,yy)==false)return false;
+
+	if(stage[xx][yy]==0 && is_anyone_there(xx,yy) < 0){return true;}
+	else{return false;}
+}
+
+function is_in_board(xx,yy){
+	if(xx<0){return false;}
+	if(yy<0){return false;}
+	if(board.tate<=yy){return false;}
+	if(board.yoko<=xx){return false;}
+	return true;
+}
+
+
+
+//---------------------
+
+
+</script>
+
+</head>
+<body onload="init();" >
+<center>
+
+<table width="100%" id="board_table"><tr><td class="board_ul" id="board_ul"><center>
+<canvas id="game_display"  style="outline:solid;"></canvas>
+</center>
+
+<table id="message_display" >
+<tr><td>　</td></tr>
+<tr><td>　</td></tr>
+<tr><td>　</td></tr>
+<tr><td>　</td></tr>
+<tr><td>　</td></tr>
+</table>
+</td><td class="board_migi" id="board_migi" align="left">
+<table id="card_display" class="card_display" style="width:100%;table-layout:fixed;"></table>
+</td></tr>
+<tr><td class="board_shita" id="board_shita" align="center"></td>
+<td id="board_lr"><span style="font-size:10pt;">Github</span></td></tr>
+</table>
+
+
+
+</center>
+
+
+
+
+</body>
+</html>
