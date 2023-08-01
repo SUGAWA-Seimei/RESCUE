@@ -127,7 +127,7 @@ var role = {
 					var sss =[];
 					for(var i=0;i<poi.length;i++){
 						if(poi[i].status==1){
-							sss.push("["+poi[i].x+","+poi[i].y+"]のマス");
+							sss.push("地点["+poi[i].x+","+poi[i].y+"]");
 						}
 					}
 					if(sss.length==0){
@@ -371,7 +371,7 @@ var board = {
 }
 
 var game = {
-	version:0.9,//ロードデータの互換性がなくなったらメジャーバージョンを上げる。そうでなければ小数点以下を上げる。
+	version:0.91,//ロードデータの互換性がなくなったらメジャーバージョンを上げる。そうでなければ小数点以下を上げる。
 
 	phase: 0,//シーンでの進行度合い、ゲームブックのパラグラフ番号の感覚
 	scene: 0,//メニュー、チュートリアル、セットアップ、ゲーム中、煙の設置、勝敗判定&POIの設置
@@ -780,7 +780,7 @@ function additional_hotspot(){//追加の高温点
 		roll();
 		while(board.hotspot[dice8][dice6]!=0){roll();}
 		board.hotspot[dice8][dice6]=1;
-		console.log("["+dice8+","+dice6+"]のマスに追加の高温点");
+		console.log("地点["+dice8+","+dice6+"]に追加の高温点");
 	}
 
 	game.hotspot_remain = 6;
@@ -924,7 +924,7 @@ function load_game(){
 		choose_action();
 	}else if(game.scene==4 && game.phase ==1){
 		clear_message();
-		add_message("ロード完了。["+game.firespot_x+","+game.firespot_y+"]のマスの炎の拡大から再開。");
+		add_message("ロード完了。地点["+game.firespot_x+","+game.firespot_y+"]の炎の拡大から再開。");
 		show_option(["次へ"]);
 		
 	}else if(game.scene==5 && game.phase ==3){
@@ -1629,7 +1629,7 @@ function choose_dismount_pos(xx,yy){
 		add_message("プレイヤー"+(boarding_member[0].n+1)+"の降車位置を選択してください。");
 		var sss = [];
 		for(var i=0;i<car[pos].length;i++){
-			sss.push("["+car[pos][i][0]+","+car[pos][i][1]+"]のマス");
+			sss.push("地点["+car[pos][i][0]+","+car[pos][i][1]+"]");
 		}
 		show_option(sss);
 		draw_board();
@@ -1683,7 +1683,7 @@ function deckgun(a){
 
 	if(a==0){
 		adjust_deckgun();
-		add_message("["+dice8+","+dice6+"]のマスに放水！");
+		add_message("地点["+dice8+","+dice6+"]に放水！");
 		board.fire[dice8][dice6] = 0;
 		for(var i=0;i<4;i++){
 			var wall;
@@ -1703,7 +1703,7 @@ function deckgun(a){
 		choose_action();
 	}else{
 		adjust_deckgun();
-		add_message("["+dice8+","+dice6+"]のマスに放水しようとしてる。振り直しますか？");
+		add_message("地点["+dice8+","+dice6+"]に放水しようとしてる。振り直しますか？");
 		draw_board();
 		draw_circle(dice8,dice6);
 		var sss=[];
@@ -1823,7 +1823,7 @@ function expand_fire(){
 
 	game.scene = 4;
 	game.phase = 1;
-	add_message("["+dice8+","+dice6+"]のマスで炎の拡大！");
+	add_message("地点["+dice8+","+dice6+"]で炎の拡大！");
 	show_option(["次へ"]);
 	if(board.fire[dice8][dice6] == 2){
 		explode(dice8,dice6);
@@ -1866,7 +1866,7 @@ function chain_flashover(xx,yy){
 	var xm;var ym;
 
 	if(board.fire[xx][yy]!=1)return false;
-	//console.log("["+xx+","+yy+"]のマスのフラッシュ判定");
+	//console.log("地点["+xx+","+yy+"]のフラッシュ判定");
 	for(var i=0;i<4;i++){
 		xm = Math.round(xx+Math.sin(i*Math.PI/2));
 		ym = Math.round(yy+Math.cos(i*Math.PI/2));
@@ -1987,7 +1987,7 @@ function dead_check(){
 		if(poi[i].status > 1){
 			game.scene = 5;
 			game.phase = 2;
-			add_message("["+poi[i].x+","+poi[i].y+"]のマスにいた"+poi_name[poi[i].status]+"はが炎に巻かれて亡くなった。");
+			add_message("地点["+poi[i].x+","+poi[i].y+"にいた"+poi_name[poi[i].status]+"はが炎に巻かれて亡くなった。");
 			poi[i].status = 0;
 			game.dead++;
 			if(game.dead>=4){
@@ -2005,7 +2005,7 @@ function dead_check(){
 
 	for(var i=0;i<player.length;i++){
 		if(board.fire[player[i].x][player[i].y]<2)continue;
-		add_message("["+player[i].x+","+player[i].y+"]のマスにいたプレイヤー"+(i+1)+"はが炎に巻かれて避難した。");
+		add_message("地点["+player[i].x+","+player[i].y+"]にいたプレイヤー"+(i+1)+"はが炎に巻かれて避難した。");
 		var mr = board.tate + board.yoko;
 		var sss = [];
 		reentry_pos = [];
@@ -2018,13 +2018,13 @@ function dead_check(){
 				yy = board.ambulance_place[j][k][1];
 				var r = Math.abs(xx-player[i].x) + Math.abs(yy-player[i].y);
 				if(r==mr){
-					sss.push("["+xx+","+yy+"]のマス");
+					sss.push("地点["+xx+","+yy+"]");
 					reentry_pos.push(xx,yy);
 				}
 				if(r<mr){
 					mr=r;
 					reentry_pos=[[xx,yy]];
-					sss = ["["+xx+","+yy+"]のマス"];
+					sss = ["地点["+xx+","+yy+"]"];
 				}
 			}
 			}
@@ -2033,7 +2033,7 @@ function dead_check(){
 			var j = board.ambulance_pos;
 			for(var k=0;k<board.ambulance_place[j].length;k++){
 				reentry_pos.push([board.ambulance_place[j][k][0],board.ambulance_place[j][k][1]]);
-				sss.push("["+board.ambulance_place[j][k][0]+","+board.ambulance_place[j][k][1]+"]のマス");
+				sss.push("地点["+board.ambulance_place[j][k][0]+","+board.ambulance_place[j][k][1]+"]");
 			}
 		}
 
@@ -2049,7 +2049,7 @@ function dead_check(){
 			add_message("どこからリスタートしますか？");
 			return true;
 		}else{
-			add_message("["+reentry_pos[0][0]+","+reentry_pos[0][1]+"]のマスから再突入する。");
+			add_message("地点["+reentry_pos[0][0]+","+reentry_pos[0][1]+"]から再突入する。");
 			player[i].x = reentry_pos[0][0];
 			player[i].y = reentry_pos[0][1];
 			board.fire[reentry_pos[0][0]][reentry_pos[0][1]]=0;
@@ -2085,7 +2085,7 @@ function reentry(xx,yy=-1){
 		yy = reentry_pos[a][1];
 
 		clear_message();
-		add_message("["+xx+","+yy+"]のマスから再突入する。");
+		add_message("地点["+xx+","+yy+"]から再突入する。");
 		show_option(["次へ"]);
 		draw_board();
 		player[i].x=xx;
@@ -2102,11 +2102,11 @@ function flip_poi(a){
 		if(Math.random()*(game.victim_rest+game.false_rest)<game.false_rest){
 			game.false_rest--;
 			poi[a].status = 0;
-			add_message("["+poi[a].x+","+poi[a].y+"]のマスの不審箇所は誤報だった！");
+			add_message("地点["+poi[a].x+","+poi[a].y+"]の不審箇所は誤報だった！");
 		}else{
 			game.victim_rest--;
 			poi[a].status = 2;
-			add_message("["+poi[a].x+","+poi[a].y+"]のマスの不審箇所に要救助者がいた！");
+			add_message("地点["+poi[a].x+","+poi[a].y+"]の不審箇所に要救助者がいた！");
 		}
 		draw_board();
 	}
@@ -2131,7 +2131,7 @@ function refill_poi(){
 			poi[i].status = 1;
 			game.poi_rest--;
 			board.fire[dice8][dice6] = 0;
-			add_message("["+poi[i].x+","+poi[i].y+"]のマスの不審箇所が判明した。");
+			add_message("地点["+poi[i].x+","+poi[i].y+"]の不審箇所が判明した。");
 			for(var j=0;j<player.length;j++){if(player[j].x == dice8 && player[j].y == dice6){flip_poi(i);}}
 			draw_board();
 			tmp = false;
@@ -2150,7 +2150,7 @@ function poi_spawn(){
 	roll();
 
 	while(wander){
-		console.log("["+dice8+"]["+dice6+"]のマスのpoi_spawnチェック");
+		console.log("地点["+dice8+"]["+dice6+"]のpoi_spawnチェック");
 		wander = false;
 		if(game.difficulty>=0){
 			if(board.fire[dice8][dice6]>0){wander = true;console.log("火がある");};
@@ -2273,10 +2273,10 @@ function add_hotspot(xx,yy){//高温点追加。残ってなきゃやらない�
 	if(board.hotspot[xx][yy]==0 && game.hotspot_remain>0 ){
 		board.hotspot[xx][yy]=1;
 		game.hotspot_remain--;
-		add_message("["+dice8+","+dice6+"]のマスに高温点の追加！");
+		add_message("地点["+dice8+","+dice6+"]に高温点の追加！");
 		draw_board();
 	}else if(board.hotspot[xx][yy]==0 && game.hotspot_remain<=0 ){
-		add_message("["+dice8+","+dice6+"]のマスに高温点の追加…するとこだったけどもう高温点がない。");
+		add_message("地点["+dice8+","+dice6+"]に高温点の追加…するとこだったけどもう高温点がない。");
 		draw_board();
 
 	}
@@ -2296,7 +2296,7 @@ function explode(xx,yy){//爆発
 	var xm;
 	var ym;
 	var tmp;
-	console.log("["+xx+","+yy+"]のマスで爆発！");
+	console.log("地点["+xx+","+yy+"]で爆発！");
 	for(var i=0;i<4;i++){
 		xm = Math.round(xx+Math.sin(i*Math.PI/2));
 		ym = Math.round(yy+Math.cos(i*Math.PI/2));
@@ -2881,7 +2881,7 @@ function tutorial(){
 
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("今回は[7,2]のマスが選ばれ煙が発生しただけで済みました。");
+		add_message("今回は地点[7,2]が選ばれ煙が発生しただけで済みました。");
 		add_message("…とは行きません。");
 		add_message("「炎の拡大」では煙への引火と危険物の爆発も起きるのです。");
 
@@ -3008,7 +3008,7 @@ function tutorial(){
 		draw_circle(4,2);
 		
 		clear_message();
-		add_message("今回は[4,2]のマスが選ばれました。");
+		add_message("今回は地点[4,2]が選ばれました。");
 		add_message("その地点と上下左右の地点のうち");
 		add_message("壁や閉じた扉で阻まれていない地点の炎や煙が除去されます。");
 		add_message("今回の地点は下と壁で阻まれているので何も消えません。");
@@ -3026,7 +3026,7 @@ function tutorial(){
 		
 		draw_circle(2,1);
 		clear_message();
-		add_message("再抽選の結果、[2,1]のマスが選ばれました。");
+		add_message("再抽選の結果、地点[2,1]が選ばれました。");
 		add_message("左と下の炎が除去されました。");
 		add_message("　");
 		add_message("良い地点が抽選されれば");
@@ -3110,7 +3110,7 @@ function tutorial(){
 		draw_circle(1,2);
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("今回は[1,2]のマスが選ばれました。");
+		add_message("今回は地点[1,2]が選ばれました。");
 		add_message("既に炎があるので「爆発」が起きます。");
 		add_message("　");
 		add_message("これから「爆発」の説明をします。");
@@ -3396,7 +3396,7 @@ function tutorial(){
 		draw_board();
 		draw_circle(2,3);
 		clear_message();
-		add_message("炎（"+emoji["fire"].chara+"）");
+		add_message("炎（"+emoji["smoke"].chara+"）");
 		add_message("そこに炎が上がっております。");
 		add_message("不信箇所の追加時に要救助者や隊員が炎の上にいると");
 		add_message("炎に巻かれて亡くなったり建物の外に避難したりします。");
@@ -3502,25 +3502,8 @@ function tutorial(){
 
 		game.phase++;
 	}else if(game.phase==116){
-
-		show_option(["次へ"]);
-		draw_board();
-		draw_circle(0,0);
-		clear_message();
-		add_message("また、このゲームにおいて画面上の位置を指し示す際は");
-		add_message("”[X,Y]のマス”の形式で表記します。");
-		add_message("画面左上端のマス(〇がついているマス)を[0,0]のマスとし、");
-		add_message("右に進むほどにXが増え、下に行くほどYが増えます。");
-		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-
-		game.phase++;
-	}else if(game.phase==117){
 		poi=[];
-
-		player[0].x=-1;
-		player[1].x=-1;
-		player[2].x=-1;
-
+		
 		board.fire[2][2]=2;
 		board.fire[3][2]=2;
 		board.fire[2][3]=2;
@@ -3541,25 +3524,23 @@ function tutorial(){
 
 		draw_board();
 		clear_message();
-		add_message("【ゲームのセットアップ】");
-		add_message("簡易ルールでは、ゲームの開始時に");
-		add_message("炎"+emoji["fire"].chara+"と不審箇所(<span style='background-color:"+poi_color+"'>"+emoji["poi"].chara+"</span>)が定位置に配置されます。");
+		add_message("ゲームの開始時に炎と不審箇所(<span style='background-color:"+poi_color+"'>"+emoji["poi"].chara+"</span>)が定位置に配置されます。");
+;
+		add_message("　");
+		game.phase=104;
 
-		game.phase++;
-
-	}else if(game.phase==118){
+	}else if(game.phase==106){
 
 		clear_message();
 
 		show_option(["次へ"]);
-		add_message("その後、隊員の初期位置となるマスを決めます。");
-		add_message("プレイヤーは建物外周のいずれかのマスから");
-		add_message("隊員の初期位置となるマスをクリックして選択してください。");
-		add_message("複数の隊員が同じマスからスタートしても構いません。");
+		add_message("その後、プレイヤーの初期位置を決めます。");
+		add_message("プレイヤーは建物外周のいずれかの位置から");
+		add_message("初期位置を選びクリックしてください。");
 
 		game.phase++;
 
-	}else if(game.phase==119){
+	}else if(game.phase==105){
 
 		clear_message();
 
@@ -3569,52 +3550,33 @@ function tutorial(){
 		draw_board();
 
 		show_option(["次へ"]);
-		add_message("今回の例ではこのような初期位置としました。");
-		add_message("　");
-		add_message("これでセットアップが完了しました。");
-		add_message("プレイヤー1から順にターンが始まります。");
+		add_message("これでセットアップが完了しました。プレイヤー1から順にゲームが始まります。");
 		game.phase++;
 
-	}else if(game.phase==120){
+	}else if(game.phase==106){
 
 		take_my_turn();
 		phase_change(tmp_s,tmp_p);
 		clear_message();
-		add_message("ターン中、プレイヤーはアクションポイントを使って");
-		add_message("移動などのアクションを行い、救助活動を行います。");
-		add_message("APがあればターン内に何度アクションをしても構いません。");
-		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		add_message("ターンのはじめに4アクションポイント(AP、"+emoji["ap"].chara+"で表示)が");
+		add_message("付与されます。APが残っている限り、好きなアクションを好きな順で");
+		add_message("何度も実行することが出来ます。");
+		add_message("未使用のAPは4APまで次の自分のターンに持ち越すことが出来ます。");
 		game.phase++;
 
-	}else if(game.phase==121){
-
-		clear_message();
-		add_message("APはターン開始時に4AP付与されます。");
-		add_message("APを残してターンを終了すると、");
-		add_message("最大4APまで次の自分のターンに持ち越すことができます。");
-
-		game.phase++;
-
-	}else if(game.phase==122){
+	}else if(game.phase==107){
 
 		card_td[0].style="background-color:#f0e0d0";
 		clear_message();
 		add_message("移動:1AP ／ 運ぶ:2AP");
-		add_message("隊員と上下左右に隣接するマスを指定してそこに移動します。");
-		add_message("要救助者をつかんだ状態であれば、移動と同時に運びます。");
-
-		game.phase++;
-
-	}else if(game.phase==123){
-
-		clear_message();
-		add_message("何もつかんでいない状態であれば、");
-		add_message("2APを使って炎("+emoji["fire"].chara+")の中にも移動できます。");
+		add_message("隣接マスを指定してそちらの方向に移動します。");
+		add_message("何かをつかんだ状態であれば、移動と同時に運びます。");
+		add_message("何もつかんでいなければ炎("+emoji["fire"].chara+")の中にも移動できます。（2AP）");
 		add_message("ただし、炎の上でターンを終了することは出来ません。");
 
 		game.phase++;
 
-	}else if(game.phase==124){
+	}else if(game.phase==108){
 
 		player[0].x=1;player[0].y=5;
 		game.ap=0;
@@ -3623,26 +3585,14 @@ function tutorial(){
 		phase_change(tmp_s,tmp_p);
 		draw_board();
 		clear_message();
-		add_message("不審箇所と同じマスにいる場合、そこに要救助者がいるか、");
-		add_message("または誤報であるかが判明します。");
-		add_message("不審箇所はゲーム中に15個用意されており、");
-		add_message("そのうち要救助者は10個、誤報は5個あります。");
-
+		add_message("不審箇所と同じマスにいる場合、要救助者の存否が判明します。");
+		add_message("（不審箇所の中に要救助者が10、誤報が5あります。）");
+		add_message("　");
+		add_message("要救助者の存在が判明したら"+emoji["victim"].chara+"で表示されます。");
 		game.phase++;
 
 
-	}else if(game.phase==125){
-
-		clear_message();
-		add_message("不審箇所と要救助者は");
-		add_message("救出されるか、死亡するか、誤報と判明することで取り除かれます。");
-		add_message("不審箇所と要救助者が盤面に2つ以下で不審箇所の残りがあるならば、");
-		add_message("ターン終了時に新しく盤面に補充されます(詳しくは後述)。");
-
-
-		game.phase++;
-
-	}else if(game.phase==126){
+	}else if(game.phase==109){
 
 		game.ap=4;
 		choose_action();
@@ -3651,11 +3601,12 @@ function tutorial(){
 
 		card_td[1].style="background-color:#f0e0d0";
 		clear_message();
-		add_message("扉の開閉:1AP ／ 壁を壊す:2AP");
+		add_message("扉の開閉:1AP ／ 壁を壊す:2AP("+role["rescue"].name+"は1AP)");
 		add_message("隣接マスを指定すると、間にある扉の開閉や壁の破壊を行います。");
+		add_message("無傷→損傷→開通の変化ごとに建物の耐久値（"+emoji["damage"].chara+"）が減ります。");
 		game.phase++;
 
-	}else if(game.phase==127){
+	}else if(game.phase==110){
 
 		chop(1,4);
 		phase_change(tmp_s,tmp_p);
@@ -3667,7 +3618,7 @@ function tutorial(){
 		add_message("　");
 		game.phase++;
 
-	}else if(game.phase==128){
+	}else if(game.phase==111){
 
 		chop(1,4);
 		clear_message();
@@ -3676,7 +3627,7 @@ function tutorial(){
 		add_message("建物の耐久値（"+emoji["damage"].chara+"）が1減ります。");
 		game.phase++;
 
-	}else if(game.phase==129){
+	}else if(game.phase==112){
 		game.ap=4;
 		player[0].x=4;player[0].y=5;
 		choose_action();
@@ -3686,7 +3637,7 @@ function tutorial(){
 		add_message("また、オレンジ色の扉は開け閉めすることが出来ます。");
 		game.phase++;
 
-	}else if(game.phase==130){
+	}else if(game.phase==113){
 		chop(4,4);
 		phase_change(tmp_s,tmp_p);
 
@@ -3699,7 +3650,7 @@ function tutorial(){
 		game.phase++;
 
 
-	}else if(game.phase==131){
+	}else if(game.phase==114){
 
 		game.ap=4;
 		choose_action();
@@ -3714,7 +3665,7 @@ function tutorial(){
 
 
 
-	}else if(game.phase==132){
+	}else if(game.phase==115){
 
 
 		extinguish(4,4);
@@ -3722,13 +3673,13 @@ function tutorial(){
 
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("煙があると再度炎になりやすいため、完全に消火するには");
-		add_message("「炎→煙」と「煙→除去」でアクションを二回行う必要があります。");
+		add_message("炎を除去するにはこのアクションを２回行う必要があります。");
+		add_message("隣のマスと壁や閉まった扉で阻まれている場合は消火できません。");
 
 		game.phase++;
 
 
-	}else if(game.phase==133){
+	}else if(game.phase==116){
 
 		extinguish(4,4);
 
@@ -3738,7 +3689,7 @@ function tutorial(){
 		add_message("消火アクションを2回行って完全に消火しました。");
 		game.phase++;
 
-	}else if(game.phase==134){
+	}else if(game.phase==117){
 
 		game.ap=4;
 		player[0].x=1;player[0].y=5;
@@ -3754,7 +3705,7 @@ function tutorial(){
 		add_message("各プレイヤー１人までつかむ事ができます。");
 		game.phase++;
 
-	}else if(game.phase==135){
+	}else if(game.phase==118){
 
 
 		grab(0,0);
@@ -3762,43 +3713,39 @@ function tutorial(){
 		
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("要救助者をつかんでいる状態だと");
+		add_message("何かをつかんでいる状態だと");
 		add_message("「移動」アクションが「運ぶ」アクションに変わります。");
 		game.phase++;
 
 
-	}else if(game.phase==136){
+	}else if(game.phase==119){
 		player[0].x=3;player[0].y=6;
 		player_move(0,3,7);
 		game.ap=0;
 		phase_change(tmp_s,tmp_p);
-		context.fillStyle="rgba(0,0,0,50%)";
-		context.fillRect(masu_naka(1)-cell_size/20,masu_naka(5)-cell_size/20,masu_haji(2)+cell_size/10,cell_size/10);
-		context.fillRect(masu_naka(3)-cell_size/20,masu_naka(5)-cell_size/20,cell_size/10,masu_naka(1)+cell_size/10);
+
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		add_message("<b>要救助者</b>を<b>建物の外周まで運ぶ</b>ことで救出できます。");
 		add_message("　");
 		add_message("要救助者を救出したら生還者("+emoji["alive"].chara+")が1増えます。");
-		add_message("７人以上救出すれば勝利となります。");
+		add_message("７人以上救出するれば勝利となります。");
 		game.phase++;
 
-	}else if(game.phase==137){
+	}else if(game.phase==120){
 
 
 		card_td[9].style="background-color:#f0e0d0";
 		clear_message();
-		draw_board();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("ターン内に行いたいアクションがすべて終わったら");
+		add_message("ターン中の行動がすべて終わったら");
 		add_message("「ターン終了」をクリックして終了します。");
 		add_message("　");
-		add_message("この時点で未使用のAP"+emoji["ap"].chara+"が");
-		add_message("次の自分のターンに持ち越されます。");
+		add_message("この時点で未使用のAP"+emoji["ap"].chara+"が持ち越されます。");
 
 		game.phase++;
 
-	}else if(game.phase==138){
+	}else if(game.phase==121){
 
 		show_option(["次へ"]);
 
@@ -3809,7 +3756,7 @@ function tutorial(){
 
 		game.phase++;
 
-	}else if(game.phase==139){
+	}else if(game.phase==122){
 		board.fire[7][2]=1;
 		show_option(["次へ"]);
 		draw_board();
@@ -3817,13 +3764,10 @@ function tutorial(){
 
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("「炎の拡大」ではランダムな地点が一つ選ばれます。");
-		add_message("何もない地点なら煙"+emoji["smoke"].chara+"が発生します。");
-
-
+		add_message("「炎の拡大」ではランダムな地点に煙"+emoji["smoke"].chara+"が発生します。");
 
 		game.phase++;
-	}else if(game.phase==140){
+	}else if(game.phase==123){
 		board.fire[7][2]=2;
 		show_option(["次へ"]);
 		draw_board();
@@ -3832,9 +3776,10 @@ function tutorial(){
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		add_message("既に煙"+emoji["smoke"].chara+"がある場合には炎"+emoji["fire"].chara+"が発生します。");
+		add_message("既に炎"+emoji["fire"].chara+"があった場合は「爆発」が起きます。");
 
 		game.phase++;
-	}else if(game.phase==141){
+	}else if(game.phase==124){
 		for(var xx=0;xx<board.yoko;xx++)
 		for(var yy=0;yy<board.tate;yy++)
 		board.fire[xx][yy]=0;
@@ -3850,10 +3795,10 @@ function tutorial(){
 		
 		add_message("爆発は起こった地点の上下左右のマスに影響を与えます。");
 		add_message("　");
-		add_message("この盤面の[3,3]のマスで爆発が起こった場合を例に説明します。");
+		add_message("この盤面の地点[3,3]で爆発が起こった場合を例に説明します。");
 		game.phase++;
 
-	}else if(game.phase==142){
+	}else if(game.phase==125){
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		add_message("「爆発」が起きたら上下左右のマスに以下の影響を与えます。");
@@ -3864,7 +3809,7 @@ function tutorial(){
 
 		game.phase++;
 
-	}else if(game.phase==143){
+	}else if(game.phase==126){
 
 		explode(3,3);
 		draw_board();
@@ -3876,30 +3821,23 @@ function tutorial(){
 		add_message("・壁があったら「壁を壊す」同様に損傷を与え、進行が止まります。");
 		add_message("・閉まっている扉があれば扉が取り除かれ、進行が止まります。");
 		add_message("・開いている扉があれば扉が取り除かれますが、進行は続きます。");
-		add_message("　進行が止まるか画面端に到達するまで炎が発生します。");
+		add_message("進行が止まるか画面端に到達するまで炎が発生します。");
 
 		game.phase++;
 
-	}else if(game.phase==144){
+	}else if(game.phase==127){
 
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("今回の例では、[3,3]のマスで起きた爆発の影響は次のとおりです。");
-		add_message("・左は閉まっていた扉が取り除かれ、炎は発生しません。");
+		add_message("今回の例では、地点[3,3]で起きた爆発は以下の次のとおりです。");
+		add_message("・左の扉は閉まっていたので取り除かれ、炎は発生しません。");
 		add_message("・上の壁は損傷をうけましたが、炎は発生しません。");
 		add_message("・下は何もないマスなので、炎が発生しました。");
-		game.phase++;
-	}else if(game.phase==145){
-
-		clear_message();
-		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("・右はショックウェーブが起き、");
-		add_message("　[5,3]のマスと[6,3]のマスにに炎が発生し、");
-		add_message("　[6,3]のマスの右壁が損傷しました。");
+		add_message("・右はショックウェーブが起き、地点[6,3]の右壁が損傷しました。");
 
 		game.phase++;
 
-	}else if(game.phase==146){
+	}else if(game.phase==128){
 
 
 		for(var xx=0;xx<board.yoko;xx++)
@@ -3928,7 +3866,7 @@ function tutorial(){
 
 		game.phase++;
 
-	}else if(game.phase==147){
+	}else if(game.phase==129){
 
 		board.fire[1][1]=2;
 		draw_board();
@@ -3938,11 +3876,11 @@ function tutorial(){
 		add_message("これは連鎖的に発生し、炎に変わったマスの隣に煙があった場合");
 		add_message("その煙も炎に変わります。");
 		add_message("　");
-		add_message("今回の例で[1,1]のマスの煙が炎になった場合を確認しましょう。");
+		add_message("今回の例で地点[1,1]の煙が炎になった場合を確認しましょう。");
 
 		game.phase++;
 
-	}else if(game.phase==148){
+	}else if(game.phase==130){
 
 		board.fire[1][2]=2;
 		board.fire[2][2]=2;
@@ -3959,47 +3897,46 @@ function tutorial(){
 		add_message("閉じた扉と壁で隔てられている煙は炎に変わりません。");
 		game.phase++;
 
-	}else if(game.phase==149){
+	}else if(game.phase==131){
 
 		draw_board();
 		show_option(["次へ"]);
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("「炎の拡大」の後、隊員や不審箇所等が炎の中にいる場合、");
-		add_message("不審箇所は要救助者か誤報か識別されます。");
-		add_message("要救助者が炎の中にいた場合は死亡します。");
-		add_message("隊員は外周にある濃黄色のマス<span style='background-color:"+ambulance_color+"'>　</span>のうち最も近いマスに移ります。");
-		add_message("同率で近いマスがある場合は好きな方を選べます。");
+		add_message("「炎の拡大」の後、プレイヤーや不審箇所が炎の中にいる場合、");
+		add_message("不審箇所は要救助者か誤報か識別され、");
+		add_message("要救助者が炎の中にいた場合は死亡し、");
+		add_message("プレイヤーは救急車の配置地点のうち最も近い地点に移ります。");
 		game.phase++;
 
-	}else if(game.phase==150){
+	}else if(game.phase==132){
 
 		poi[0].status = 2;
 		draw_board();
 		show_option(["次へ"]);
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("この場合、まず[4,3]のマスにいた不審箇所が識別されます");
+		add_message("この場合、まず地点[4,3]にいた不審箇所が識別されます");
 		add_message("要救助者がいたので死亡("+emoji["dead"].chara+")が1増え、");
 		add_message("ゲームから取り除かれます。");
 		add_message("　");
-		add_message("4名以上が死亡した時点で任務失敗が決まります。");
+		add_message("4名死亡させた時点で敗北が決まります。");
 		game.phase++;
 
 
 
-	}else if(game.phase==151){
+	}else if(game.phase==133){
 		poi[0].status = 0;
 		game.dead++;
 		player[0].x=5;player[0].y=0;
 		draw_board();
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("次に、プレイヤー1の隊員が炎の中にいるので、");
-		add_message("最も近い濃黄色（<span style='background-color:"+ambulance_color+"'>　</span>）のマスに移動します。");
+		add_message("次に、プレイヤー1が炎にいるので、");
+		add_message("最も近い救急車の配置地点に移動します。");
 		game.phase++;
 
-	}else if(game.phase==152){
+	}else if(game.phase==134){
 		draw_board();
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
@@ -4009,37 +3946,25 @@ function tutorial(){
 		add_message("そこに新たな不審箇所が発生します。");
 		game.phase++;
 
-	}else if(game.phase==153){
+	}else if(game.phase==135){
 		refill_poi();
 		phase_change(tmp_s,tmp_p);
 		draw_board();
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("炎や煙があるマスであれば、そのマスの炎や煙が消え、");
-		add_message("隊員がいる場所ならば直ちに要救助者か誤報かが判明します。");
+		add_message("炎や煙がある場所であればそれらが消え、");
+		add_message("プレイヤーがいる場所ならば直ちに要救助者の存否が判明します。");
 		game.phase++;
 
-	}else if(game.phase==154){
+	}else if(game.phase==136){
 		show_option(["次へ"]);
 		clear_message();
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		add_message("このように各プレイヤーでターンを進めていき、")
 		add_message("建物の耐久値がなくなるまでに要救助者を救い出すことを目指して");
-		add_message("ゲームを進めていきます。");
+		add_message("奮闘していきましょう！");
 		add_message("　");
-		add_message("7名の要救助者が救出できた時点で任務成功で勝利となります。");
-		game.phase++;
-
-
-	}else if(game.phase==155){
-		show_option(["次へ"]);
-		clear_message();
-		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
-		add_message("7名を救出したあとも、ゲームを続行することもできます。");
-		add_message("建物の耐久値がなくなり建物が崩壊するか、");
-		add_message("要救助者10名の救出/死亡が決定したらゲームが終了します。");
-		add_message("　");
-		add_message("10名完全救出を目指して奮闘していきましょう！");
+		add_message("7名救出したあとも、10人完全救出を目指して続行できます。");
 		game.phase++;
 
 	}else if(game.phase==200){
@@ -4243,7 +4168,7 @@ function draw_board(){//ボードを表示する。
 			context.fillStyle = "rgba("+ambulance_color.substring(4,ambulance_color.length-1)+",40%)";
 			context.fillRect(masu_haji(xn+0.1),masu_haji(yn+0.1),masu_haji((xm-xn)+0.8),masu_haji((ym-yn)+0.8));
 		}
-		//console.log("["+xn+","+yn+"]["+xm+","+ym+"]のマスに救急車描画");
+		//console.log("地点["+xn+","+yn+"]["+xm+","+ym+"]に救急車描画");
 		
 	};
 
