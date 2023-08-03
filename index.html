@@ -541,6 +541,7 @@ function click_option(a){
 		else if(game.phase==4)	{final_confirm_to_start(a);}//その結果を伝えさせる。
 		else if(game.phase==5)	{choose_tutorial(a);}//チュートリアルを選ばせる
 		else if(game.phase==6)	{confirm_load_data(a);}//その結果を伝えさせる。
+		else if(game.phase==7)	{enter_start_menu();}//その結果を伝えさせる。
 	}else if(game.scene==1){
 		tutorial();
 	}else if(game.scene==2){//セットアップ
@@ -2393,16 +2394,17 @@ function enter_start_menu(){
 
 	clear_message();
 	add_message("モードを選択してください。");
-	show_option(["ゲームスタート","簡易ルールでプレイ","　","ロード","チュートリアル"]);
-
+	show_option(["ゲームスタート","簡易ルールでプレイ","　","　","ロード","　","チュートリアル"]);
+	//,"クレジット"
 	draw_board();
 }
 
 function branch_start_menu(a){
 	if(a==0){game.difficulty=0;choose_player_nbr();}
 	if(a==1){game.difficulty=-1;choose_player_nbr();}
-	if(a==3){check_load_data();}//チュートリアルへ
-	if(a==4){tutorial_menu();}//チュートリアルへ
+	if(a==4){check_load_data();}//ロードへ
+	if(a==6){tutorial_menu();}//チュートリアルへ
+	if(a==7){show_credit();}//クレジットへ
 }
 
 function check_load_data(){
@@ -2547,6 +2549,19 @@ function tutorial_menu(){
 	show_option(["通常ルールの説明","簡易ルールの説明","ロールの説明","　","メニューに戻る"]);
 }
 
+function show_credit(){
+	game.scene=0;
+	game.phase=7;
+
+	clear_message();
+	add_message("- RESCUE -");
+	//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+	add_message("参考：Flash Point：Fire Rescue（Kevin Lanzing作）");
+	add_message("制作：須河 瀞命、えびらいだー");
+	add_message("Github：<a href='http://github.com/SUGAWA-Seimei/RESCUE/'>http://github.com/SUGAWA-Seimei/RESCUE/</a>");
+
+	show_option(["メニューに戻る"]);
+}
 function choose_tutorial(a){
 	if(a==0){game.phase=0;tutorial();}
 	if(a==1){game.phase=100;tutorial();}
@@ -2593,6 +2608,7 @@ function tutorial(){
 		game.dead = 0;
 		game.poi_rest=15;
 		game.turn = 0;
+		rewindable = true;;
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		clear_message();
 		show_option(["次へ"]);
@@ -2623,6 +2639,8 @@ function tutorial(){
 		add_message("プレイヤー②のターン→炎の拡大・不審箇所補充→");
 		add_message("プレイヤー③のターン→炎の拡大・不審箇所補充→");
 		add_message("プレイヤー①の手番……と、繰り返して進行します。");
+		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
+		//d_message("○○○○○○○○○○○○○○○○○○");	←これで全角18文字文の幅。iPhoneがそうだった
 
 		game.phase++;
 
@@ -2918,11 +2936,13 @@ function tutorial(){
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 
 		game.phase++;
+
 	}else if(game.phase==22){
 
 		show_option(["次へ"]);
 		card_display.rows[1].cells[0].innerHTML = highlighter(card_display.rows[1].cells[0].innerHTML,15,19);
 		draw_board();
+
 		clear_message();
 		add_message("特殊AP（"+emoji["sap"].chara+"）");
 		add_message("　");
@@ -2932,6 +2952,7 @@ function tutorial(){
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 
 		game.phase++;
+
 	}else if(game.phase==23){
 
 		show_option(["次へ"]);
@@ -3910,10 +3931,15 @@ function tutorial(){
 		player=[{role:"generalist",x:-1,y:-1,grab:[],color:p_color[0],chara:"p1",ap:0}];
 		player.push({role:"generalist",x:-1,y:-1,grab:[],color:p_color[1],chara:"p2",ap:0});
 		player.push({role:"generalist",x:-1,y:-1,grab:[],color:p_color[2],chara:"p3",ap:0});
+
 		game.damage=24;
+		game.alive = 0;
+		game.dead = 0;
 		game.poi_rest=15;
-		game.hotspot_remain = 0;
 		game.turn = 0;
+		game.hotspot_remain = 0;
+		rewindable = true;
+
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		clear_message();
 		show_option(["次へ"]);
@@ -4657,8 +4683,6 @@ function tutorial(){
 		add_message("4名以上が死亡した時点で任務失敗が決まります。");
 		game.phase++;
 
-
-
 	}else if(game.phase==155){
 		poi[0].status = 0;
 		game.dead++;
@@ -4789,6 +4813,7 @@ function tutorial(){
 		game.phase++;
 
 	}else if(game.phase==204){
+
 		player[0].role="paramedic";
 		game.ap=role[player[0].role].ap;
 		game.sap=role[player[0].role].sap;
@@ -4801,10 +4826,10 @@ function tutorial(){
 		add_message("同じマスにいる"+poi_name[2]+emoji["victim"].chara+"を蘇生して");
 		add_message(poi_name[3]+emoji["healed"].chara+"にすることが出来ます。");
 
-
 		game.phase++;
 
 	}else if(game.phase==205){
+
 		show_option(["次へ"]);
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		clear_message();
@@ -4814,8 +4839,8 @@ function tutorial(){
 		add_message("同じマスの"+poi_name[3]+"を一緒に運ぶことが出来ます。");
 		add_message(poi_name[3]+"を連れて炎に侵入することは出来ません。");
 
-
 		game.phase++;
+
 	}else if(game.phase==206){
 
 		player[0].role="hazmat";
@@ -4830,12 +4855,14 @@ function tutorial(){
 		add_message("同じマスにいる危険物をその場で処分します。");
 
 		game.phase++;
+
 	}else if(game.phase==207){
 
 		player[0].role="rescue";
 		game.ap=role[player[0].role].ap;
 		game.sap=role[player[0].role].sap;
 		show_option(["次へ"]);
+
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		clear_message();
 		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
@@ -4845,12 +4872,14 @@ function tutorial(){
 		add_message("また、「壁を壊す」アクションを1APで行えます。");
 
 		game.phase++;
+
 	}else if(game.phase==208){
 
 		player[0].role="driver";
 		game.ap=role[player[0].role].ap;
 		game.sap=role[player[0].role].sap;
 		show_option(["次へ"]);
+
 		//d_message("○○○○○○○○○○○○○○○○○○○○○○○○○○○○○○");	←これで全角30文字文の幅
 		clear_message();
 		add_message(""+role[player[0].role].name+"　AP"+emoji["ap"].chara+":"+role[player[0].role].ap+"　特殊AP"+emoji["sap"].chara+":"+role[player[0].role].sap);
@@ -5139,6 +5168,34 @@ function resize_board(){ //ボードのリサイズ
 	siz--;
 	card_display.style="font-size:"+siz+"pt;white-space:nowrap;";
 	card_font_size = siz;
+
+	message_display.style="white-space:nowrap;"
+	message_display.rows[0].cells[0].innerHTML="東大がなんだこっちはSFCやぞ東大がなんだこっちはSFCやぞ";
+	if(message_display.clientHeight>game_display.height/3 || document.documentElement.scrollWidth > document.documentElement.clientWidth){
+		siz = 7;
+		message_display.style="font-size:"+siz+"pt;white-space:nowrap;";
+	
+		while(message_display.clientHeight <= game_display.height/2 && document.documentElement.scrollWidth <= document.documentElement.clientWidth){
+			siz++;
+			message_display.style = "font-size:"+siz+"pt;white-space:nowrap;";
+		}
+
+		siz--;
+		message_display.style="font-size:"+siz+"pt;white-space:nowrap;";
+	}
+
+	show_message();
+
+	while(document.documentElement.scrollHeight<=document.documentElement.clientHeight && document.documentElement.scrollWidth <= document.documentElement.clientWidth){
+		cell_size++;
+		game_display.width = board.yoko * cell_size;
+		game_display.height = board.tate * cell_size;
+	}
+
+	cell_size--;
+	game_display.width = board.yoko * cell_size;
+	game_display.height = board.tate * cell_size;
+
 	Object.keys(emoji).forEach(function(key){
 		emoji[key].size = 5;
 		context.font = "5px monospace";
@@ -5244,7 +5301,7 @@ function dummu_option(){
 		if(card_pos==1 || i%2==0)roo = card_display.insertRow();
 
 		c = roo.insertCell();
-		c.innerHTML ="ヒロ唐澤ナイフでメ";
+		c.innerHTML ="タカヒロナイフでメ";
 
 	}
 
@@ -5395,7 +5452,7 @@ function is_in_board(xx,yy){
 <table id="card_display" class="card_display" style="width:100%;table-layout:fixed;"></table>
 </td></tr>
 <tr><td class="board_shita" id="board_shita" align="center"></td>
-<td id="board_lr"><span style="font-size:10pt;">Github</span></td></tr>
+<td id="board_lr"><!--<span style="font-size:10pt;">Github</span>--></td></tr>
 </table>
 
 
